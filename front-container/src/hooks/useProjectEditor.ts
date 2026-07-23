@@ -63,7 +63,12 @@ export function useProjectEditor() {
       if (!found) return prev
       return [
         ...prev,
-        { ...found, clientId: nextClientId(), label: `${found.label} (copie)` },
+        {
+          ...found,
+          clientId: nextClientId(),
+          persistedId: undefined,
+          label: `${found.label} (copie)`,
+        },
       ]
     })
   }, [])
@@ -98,6 +103,7 @@ export function useProjectEditor() {
     setPalettes(
       project.palettes.map((item) => ({
         clientId: nextClientId(),
+        persistedId: item.id,
         palette_type_id: item.palette_type_id,
         label: item.label,
         length_cm: item.length_cm,

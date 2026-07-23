@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom'
 
 import { EditorPage } from '../pages/EditorPage'
+import { ImportPlanPage } from '../pages/ImportPlanPage'
 import { NEW_PROJECT_ID, newProjectStepPath, projectStepPath } from './workflowRoutes'
 
 const VALID_STEPS = new Set(['1', '2', '3'])
@@ -46,6 +47,7 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<EditorPage />} />
+        <Route path="/imports/new" element={<ImportPlanPage />} />
         <Route
           path="/projects/:projectId/step/:step"
           element={<WorkflowRouteMiddleware />}

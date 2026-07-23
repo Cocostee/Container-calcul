@@ -1,5 +1,7 @@
 // HTTP calls for projects, optimization and results.
 import type {
+  OptimizeContainer,
+  OptimizePaletteInput,
   OptimizeRequest,
   PlacementResult,
 } from '../types/placement.types'
@@ -44,6 +46,22 @@ export async function optimize(
   const { data } = await apiClient.post<PlacementResult>(
     `/projects/${id}/optimize`,
     request,
+  )
+  return data
+}
+
+/**
+ * Import files already describe loaded pallets. They therefore use the
+ * container-only branch of the API instead of re-palletizing products.
+ */
+export async function optimizeImportedPallets(
+  id: string,
+  container: OptimizeContainer,
+  pallets: OptimizePaletteInput[],
+): Promise<PlacementResult> {
+  const { data } = await apiClient.post<PlacementResult>(
+    `/projects/${id}/optimize`,
+    { container, palettes: pallets },
   )
   return data
 }

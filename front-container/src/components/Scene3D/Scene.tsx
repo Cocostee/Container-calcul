@@ -26,6 +26,7 @@ interface SceneProps {
   container: OptimizeContainer
   placements: Placement[]
   pallets: GeneratedPallet[]
+  fallbackPallets?: Array<{ id: string; label: string; weight_kg: number }>
 }
 
 interface CameraRigProps {
@@ -69,30 +70,47 @@ const DISPLAY_LABELS: Record<DisplayMode, string> = {
   exploded: 'Vue éclatée',
 }
 
-function legacyPallets(placements: Placement[]): GeneratedPallet[] {
-  return placements.map((placement) => ({
-    id: placement.palette_instance_id,
-    label: placement.palette_instance_id,
+function legacyPallets(
+  placements: Placement[],
+  fallbackPallets: Array<{ id: string; label: string; weight_kg: number }>,
+): GeneratedPallet[] {
+  return placements.map((placement) => {
+    const source = fallbackPallets.find((pallet) =>
+      placement.palette_instance_id.startsWith(`imported-${pallet.id}-`),
+    )
+    const number = placement.palette_instance_id.match(/-(\d+)$/)?.[1]
+    return {
+      id: placement.palette_instance_id,
+      label: source
+        ? `${source.label}${number ? ` ${Number(number) + 1}` : ''}`
+        : placement.palette_instance_id,
     length: placement.length,
     width: placement.width,
     height: placement.height,
     base_height: 0,
-    weight_kg: 0,
+      weight_kg: source?.weight_kg ?? 0,
     package_count: 0,
     fill_rate_volume: 0,
     fill_rate_weight: 0,
     packages: [],
-  }))
+    }
+  })
 }
 
-export function Scene({ container, placements, pallets }: SceneProps) {
+export function Scene({
+  container,
+  placements,
+  pallets,
+  fallbackPallets = [],
+}: SceneProps) {
   const [view, setView] = useState<ViewPreset>('iso')
   const [displayMode, setDisplayMode] = useState<DisplayMode>('container')
   const [selectedPalletId, setSelectedPalletId] = useState<string>('')
 
   const allPallets = useMemo(
-    () => (pallets.length > 0 ? pallets : legacyPallets(placements)),
-    [pallets, placements],
+    () =>
+      pallets.length > 0 ? pallets : legacyPallets(placements, fallbackPallets),
+    [fallbackPallets, pallets, placements],
   )
   const displayedPallets = useMemo<DisplayedPallet[]>(
     () =>
@@ -119,6 +137,7 @@ export function Scene({ container, placements, pallets }: SceneProps) {
     (total, { pallet }) => total + pallet.package_count,
     0,
   )
+  const hasPackageDetails = totalPackageCount > 0
 
   const length = container.length_cm * SCALE
   const width = container.width_cm * SCALE
@@ -212,11 +231,14 @@ export function Scene({ container, placements, pallets }: SceneProps) {
           >
             <option value="">Choisir une palette</option>
             <option value={ALL_PALLETS_VALUE}>
-              Toutes les palettes remplies · {totalPackageCount} colis
+              {hasPackageDetails
+                ? `Toutes les palettes remplies · ${totalPackageCount} colis`
+                : `Toutes les palettes importées · ${displayedPallets.length} palettes`}
             </option>
             {displayedPallets.map(({ pallet }) => (
               <option key={pallet.id} value={pallet.id}>
-                {pallet.label} · {pallet.package_count} colis
+                {pallet.label} ·{' '}
+                {pallet.package_count > 0 ? `${pallet.package_count} colis` : 'palette importée'}
               </option>
             ))}
           </select>
@@ -229,13 +251,14 @@ export function Scene({ container, placements, pallets }: SceneProps) {
           </strong>
           {isAllPalletsView ? (
             <span>
-              {displayedPallets.length} palettes · {totalPackageCount} colis ·
-              volumes visibles
+              {displayedPallets.length} palettes ·{' '}
+              {hasPackageDetails ? `${totalPackageCount} colis · ` : ''}volumes visibles
             </span>
           ) : (
             <span>
-              {selected?.pallet.package_count} colis ·{' '}
-              {Math.round((selected?.pallet.fill_rate_volume ?? 0) * 100)} % rempli
+              {selected?.pallet.package_count
+                ? `${selected.pallet.package_count} colis · ${Math.round((selected.pallet.fill_rate_volume ?? 0) * 100)} % rempli`
+                : 'Palette importée · volume visible'}
             </span>
           )}
           <Button variant="ghost" onClick={() => setSelectedPalletId('')}>
@@ -244,10 +267,9 @@ export function Scene({ container, placements, pallets }: SceneProps) {
         </div>
       ) : null}
       <p className="scene3d__hint">
-        Sélectionnez « Toutes les palettes remplies » pour comparer tous les
-        colis et leurs volumes transparents : la vue éclatée s&apos;active pour
-        faciliter l&apos;inspection. Les flèches et la traverse colorée indiquent
-        le sens de la palette.
+        Sélectionnez toutes les palettes pour comparer leurs volumes
+        transparents : la vue éclatée s&apos;active pour faciliter l&apos;inspection.
+        Les flèches et la traverse colorée indiquent le sens de la palette.
       </p>
       <Canvas
         aria-label="Vue 3D du conteneur, des palettes générées et des colis"

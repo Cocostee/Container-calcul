@@ -5,6 +5,7 @@ interface ConfigurationSummaryProps {
   containerName: string
   container: OptimizeContainer | null
   pallet: PaletteType | null
+  palletLabel?: string
   step: number
 }
 
@@ -13,6 +14,7 @@ export function ConfigurationSummary({
   containerName,
   container,
   pallet,
+  palletLabel,
   step,
 }: ConfigurationSummaryProps) {
   return (
@@ -34,7 +36,7 @@ export function ConfigurationSummary({
         </div>
         <div>
           <dt>Palette</dt>
-          <dd>{pallet?.name ?? 'Non sélectionnée'}</dd>
+          <dd>{pallet?.name ?? palletLabel ?? 'Non sélectionnée'}</dd>
           {pallet ? (
             <small>
               {pallet.length_cm} × {pallet.width_cm} cm · charge{' '}

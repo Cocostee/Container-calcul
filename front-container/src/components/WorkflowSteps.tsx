@@ -6,6 +6,7 @@ interface WorkflowStepsProps {
   packageCount: number
   palletCount: number
   hasResult: boolean
+  isImported: boolean
   onStepChange: (step: WorkflowStepNumber) => void
 }
 
@@ -23,6 +24,7 @@ export function WorkflowSteps({
   packageCount,
   palletCount,
   hasResult,
+  isImported,
   onStepChange,
 }: WorkflowStepsProps) {
   const steps: WorkflowStep[] = [
@@ -35,7 +37,12 @@ export function WorkflowSteps({
     {
       id: 2,
       title: 'Charger les palettes',
-      detail: packageCount > 0 ? `${packageCount} colis` : 'Ajouter les colis',
+      detail:
+        packageCount > 0
+          ? isImported
+            ? `${packageCount} palettes importées`
+            : `${packageCount} colis`
+          : 'Ajouter les colis',
       complete: hasResult && palletCount > 0,
     },
     {
