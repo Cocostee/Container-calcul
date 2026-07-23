@@ -17,7 +17,7 @@ export function PalletSelector({
   return (
     <section className="sidebar-section" aria-labelledby="pallet-title">
       <div>
-        <p className="sidebar-section__eyebrow">Étape 1</p>
+        <p className="sidebar-section__eyebrow">Étape 1 · Palette</p>
         <h2 id="pallet-title">Palette de préparation</h2>
       </div>
       <Select

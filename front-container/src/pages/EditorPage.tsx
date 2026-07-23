@@ -2,11 +2,13 @@ import { useEffect, useMemo } from 'react'
 
 import { PaletteTable } from '../components/PaletteTable'
 import { ResultsPanel } from '../components/ResultsPanel'
+import { PalletizationScene } from '../components/Scene3D/PalletizationScene'
 import { Scene } from '../components/Scene3D/Scene'
 import { ContainerSelector } from '../components/Sidebar/ContainerSelector'
 import { PaletteForm } from '../components/Sidebar/PaletteForm'
 import { PalletSelector } from '../components/Sidebar/PalletSelector'
 import { ProjectList } from '../components/Sidebar/ProjectList'
+import { WorkflowSteps } from '../components/WorkflowSteps'
 import { Button } from '../components/ui/Button/Button'
 import { Input } from '../components/ui/Input/Input'
 import { useProjectContext } from '../context/ProjectContext'
@@ -65,6 +67,7 @@ export function EditorPage() {
   )
   const isReadyToCalculate =
     Boolean(sceneContainer) && Boolean(selectedPallet) && packageCount > 0
+  const generatedPalletCount = optimization.result?.pallets.length ?? 0
 
   const handleSave = async () => {
     const saved = await editor.save(effectivePalletId)
@@ -96,7 +99,7 @@ export function EditorPage() {
 
   return (
     <div className="editor">
-      <aside className="sidebar" aria-label="Préparation du projet">
+      <aside id="step-1" className="sidebar" aria-label="Préparation du projet">
         <div className="sidebar__brand">
           <span className="sidebar__mark" aria-hidden="true">
             <span />
@@ -109,8 +112,8 @@ export function EditorPage() {
           </div>
         </div>
         <p className="sidebar__intro">
-          Préparez les colis sur une palette, puis optimisez leur placement dans
-          le conteneur.
+          Définissez le conteneur et la palette, chargez les colis, puis
+          contrôlez leur implantation finale.
         </p>
         <ProjectList
           projects={projects.projects}
@@ -145,8 +148,9 @@ export function EditorPage() {
             <p className="workspace-header__eyebrow">Optimisation</p>
             <h1>Préparer un chargement</h1>
             <p className="workspace-header__description">
-              Étape 1 : répartissez les colis sur des palettes. Étape 2 :
-              visualisez leur placement optimisé dans le conteneur.
+              Configurez d&apos;abord le conteneur et le modèle de palette. Les
+              colis sont ensuite répartis sur toutes les palettes générées,
+              avant leur placement final dans le conteneur.
             </p>
           </div>
           <div
@@ -164,6 +168,13 @@ export function EditorPage() {
           </div>
         </header>
 
+        <WorkflowSteps
+          hasConfiguration={Boolean(sceneContainer) && Boolean(selectedPallet)}
+          packageCount={packageCount}
+          palletCount={generatedPalletCount}
+          hasResult={Boolean(optimization.result)}
+        />
+
         <section className="project-bar" aria-label="Actions du projet">
           <Input
             id="project-name"
@@ -177,7 +188,7 @@ export function EditorPage() {
               onClick={handleCalculate}
               disabled={optimization.isOptimizing}
             >
-              Calculer le chargement
+              Calculer le plan
             </Button>
             <Button
               variant="secondary"
@@ -195,12 +206,65 @@ export function EditorPage() {
           </p>
         ) : null}
 
-        <div className="workspace-overview">
+        <section
+          id="step-2"
+          className="palettes-panel"
+          aria-labelledby="packages-title"
+        >
+          <div className="panel-heading">
+            <div>
+              <p className="panel-heading__eyebrow">Étape 2 · Chargement</p>
+              <h2 id="packages-title">Colis à charger sur les palettes</h2>
+            </div>
+            <span className="panel-heading__meta">
+              {packageCount} colis · {packageLineCount} référence
+              {packageLineCount > 1 ? 's' : ''}
+            </span>
+          </div>
+          <PaletteTable
+            palettes={editor.palettes}
+            onUpdate={editor.updatePalette}
+            onDuplicate={editor.duplicatePalette}
+            onRemove={editor.removePalette}
+          />
+        </section>
+
+        <section
+          className="palletization-panel"
+          aria-labelledby="palletization-title"
+        >
+          <div className="panel-heading">
+            <div>
+              <p className="panel-heading__eyebrow">
+                Étape 2 · Prévisualisation 3D
+              </p>
+              <h2 id="palletization-title">Toutes les palettes chargées</h2>
+            </div>
+            <span className="panel-heading__meta">
+              {generatedPalletCount} palette
+              {generatedPalletCount > 1 ? 's' : ''}
+            </span>
+          </div>
+          <div className="palletization-viewport">
+            {optimization.result?.pallets.length ? (
+              <PalletizationScene pallets={optimization.result.pallets} />
+            ) : (
+              <p className="muted">
+                Ajoutez les colis puis calculez le plan pour visualiser leur
+                répartition sur chaque palette.
+              </p>
+            )}
+          </div>
+        </section>
+
+        <div id="step-3" className="workspace-overview">
           <section className="scene-panel" aria-labelledby="scene-title">
             <div className="panel-heading">
               <div>
-                <p className="panel-heading__eyebrow">Visualisation</p>
-                <h2 id="scene-title">Vue du conteneur</h2>
+                <p className="panel-heading__eyebrow">
+                  Étape 3 · Implantation finale
+                </p>
+                <h2 id="scene-title">Palettes dans le conteneur</h2>
               </div>
               <span className="panel-heading__meta">
                 {optimization.result?.pallets.length ?? 0} palette
@@ -230,25 +294,6 @@ export function EditorPage() {
             onRecalculate={handleCalculate}
           />
         </div>
-
-        <section className="palettes-panel">
-          <div className="panel-heading">
-            <div>
-              <p className="panel-heading__eyebrow">Inventaire</p>
-              <h2>Colis à préparer</h2>
-            </div>
-            <span className="panel-heading__meta">
-              {packageCount} colis · {packageLineCount} référence
-              {packageLineCount > 1 ? 's' : ''}
-            </span>
-          </div>
-          <PaletteTable
-            palettes={editor.palettes}
-            onUpdate={editor.updatePalette}
-            onDuplicate={editor.duplicatePalette}
-            onRemove={editor.removePalette}
-          />
-        </section>
       </main>
     </div>
   )

@@ -3,7 +3,7 @@
   grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
   min-height: 100dvh;
   background:
-    radial-gradient(circle at 88% 4%, rgba(193, 146, 83, 0.09), transparent 22rem),
+    radial-gradient(circle at 88% 4%, rgba(0, 107, 104, 0.08), transparent 22rem),
     var(--color-bg);
 }
 
@@ -14,8 +14,8 @@
   gap: var(--space-4);
   padding: 28px 20px;
   overflow-y: auto;
-  background: #efede7;
-  border-right: 1px solid #d8d4ca;
+  background: #e0e5e8;
+  border-right: 1px solid #c9d1d5;
 }
 
 .sidebar__brand {
@@ -123,6 +123,108 @@
   color: var(--color-muted);
 }
 
+/* ---- Three-step breadcrumb / workflow navigation ---- */
+.workflow-steps {
+  max-width: 1220px;
+  padding: 6px;
+  overflow-x: auto;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.workflow-steps ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 610px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.workflow-step {
+  position: relative;
+  min-width: 0;
+}
+
+.workflow-step:not(:last-child)::after {
+  position: absolute;
+  top: 27px;
+  right: 0;
+  left: calc(50% + 30px);
+  height: 1px;
+  content: '';
+  background: var(--color-border);
+}
+
+.workflow-step a {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 58px;
+  padding: 8px 10px;
+  color: var(--color-muted);
+  text-decoration: none;
+  border-radius: 12px;
+}
+
+.workflow-step a:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.workflow-step__number {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+}
+
+.workflow-step strong,
+.workflow-step small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflow-step strong {
+  color: var(--color-text);
+  font-size: 0.84rem;
+}
+
+.workflow-step small {
+  margin-top: 1px;
+  color: var(--color-muted);
+  font-size: 0.74rem;
+}
+
+.workflow-step--current a {
+  background: var(--color-primary-soft);
+}
+
+.workflow-step--current .workflow-step__number,
+.workflow-step--complete .workflow-step__number {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.workflow-step--current strong,
+.workflow-step--complete strong {
+  color: var(--color-primary-hover);
+}
+
 .project-status {
   display: inline-flex;
   flex: 0 0 auto;
@@ -190,6 +292,7 @@
 
 .scene-panel,
 .palettes-panel,
+.palletization-panel,
 .results-panel {
   background: rgba(255, 255, 255, 0.91);
   border: 1px solid rgba(120, 120, 108, 0.25);
@@ -253,6 +356,52 @@
 .palettes-panel {
   max-width: 1220px;
   padding: var(--space-5);
+}
+
+.palletization-panel {
+  max-width: 1220px;
+  padding: var(--space-4);
+}
+
+.palletization-viewport {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: clamp(310px, 38vh, 430px);
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(25, 61, 65, 0.22), transparent 60%),
+    #102b2d;
+  border: 1px solid rgba(178, 223, 216, 0.2);
+  border-radius: 13px;
+}
+
+.palletization-viewport > .muted {
+  max-width: 330px;
+  padding: var(--space-4);
+  color: #e5f3f1;
+  text-align: center;
+}
+
+.palletization-scene {
+  position: absolute;
+  inset: 0;
+}
+
+.palletization-scene__hint {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  z-index: 1;
+  max-width: 300px;
+  margin: 0;
+  padding: 6px 9px;
+  color: #e6f7f3;
+  font-size: 0.73rem;
+  line-height: 1.35;
+  background: rgba(10, 34, 35, 0.78);
+  border-radius: 7px;
 }
 
 /* ---- Form layout helpers ---- */
@@ -602,7 +751,7 @@
     padding: var(--space-4);
     overflow: visible;
     border-right: 0;
-    border-bottom: 1px solid #d8d4ca;
+    border-bottom: 1px solid #c9d1d5;
   }
 
   .workspace {
@@ -634,6 +783,45 @@
 
   .palettes-panel {
     padding: var(--space-4);
+  }
+
+  .workflow-steps {
+    margin-right: calc(-1 * var(--space-2));
+  }
+
+  .workflow-steps ol {
+    min-width: 0;
+  }
+
+  .workflow-step a {
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: start;
+    gap: 5px;
+    min-height: 70px;
+    padding: 8px 6px;
+  }
+
+  .workflow-step__number {
+    width: 30px;
+    height: 30px;
+    font-size: 0.78rem;
+  }
+
+  .workflow-step:not(:last-child)::after {
+    top: 23px;
+    left: calc(50% + 24px);
+  }
+
+  .workflow-step strong {
+    overflow: visible;
+    font-size: 0.76rem;
+    line-height: 1.18;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .workflow-step small {
+    font-size: 0.7rem;
   }
 }
 
@@ -669,6 +857,10 @@
   }
 
   .scene3d__hint {
+    display: none;
+  }
+
+  .palletization-scene__hint {
     display: none;
   }
 }

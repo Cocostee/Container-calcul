@@ -30,8 +30,11 @@ export function ContainerSelector({
   const isCustom = value === CUSTOM_CONTAINER_VALUE
 
   return (
-    <section className="sidebar-section">
-      <h2>Configuration du conteneur</h2>
+    <section className="sidebar-section" aria-labelledby="container-title">
+      <div>
+        <p className="sidebar-section__eyebrow">Étape 1 · Conteneur</p>
+        <h2 id="container-title">Configuration du conteneur</h2>
+      </div>
       <Select
         label="Type de conteneur"
         value={value}

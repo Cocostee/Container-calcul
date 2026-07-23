@@ -24,8 +24,11 @@ export function PaletteForm({
   submit,
 }: PaletteFormProps) {
   return (
-    <section className="sidebar-section">
-      <h2>Ajouter des colis</h2>
+    <section className="sidebar-section" aria-labelledby="package-form-title">
+      <div>
+        <p className="sidebar-section__eyebrow">Étape 2 · Colis</p>
+        <h2 id="package-form-title">Ajouter des colis</h2>
+      </div>
       <form
         className="palette-form"
         onSubmit={(event) => {
