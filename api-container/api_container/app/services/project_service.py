@@ -43,9 +43,11 @@ class ProjectService:
     def create_project(self, data: ProjectCreate) -> ProjectSchema:
         """Create a project with its initial pallet lines."""
         self._validate_container(data.container_type_id)
+        self._validate_pallet(data.pallet_type_id)
         project = Project(
             name=data.name,
             container_type_id=data.container_type_id,
+            pallet_type_id=data.pallet_type_id,
             container_custom_dims=data.container_custom_dims,
         )
         project.palettes = [self._build_palette(p) for p in data.palettes]
@@ -60,8 +62,10 @@ class ProjectService:
         """Replace a project's configuration and pallet lines."""
         project = self._require_project(project_id)
         self._validate_container(data.container_type_id)
+        self._validate_pallet(data.pallet_type_id)
         project.name = data.name
         project.container_type_id = data.container_type_id
+        project.pallet_type_id = data.pallet_type_id
         project.container_custom_dims = data.container_custom_dims
         # delete-orphan cascade removes the previous pallet rows.
         project.palettes = [self._build_palette(p) for p in data.palettes]
@@ -90,6 +94,13 @@ class ProjectService:
                 f"Unknown container type '{container_type_id}'"
             )
 
+    def _validate_pallet(self, pallet_type_id: Optional[str]) -> None:
+        if (
+            pallet_type_id is not None
+            and self._reference.get_palette_type(pallet_type_id) is None
+        ):
+            raise ValidationDomainError(f"Unknown pallet type '{pallet_type_id}'")
+
     @staticmethod
     def _build_palette(data: PaletteInstanceCreate) -> PaletteInstance:
         return PaletteInstance(
@@ -112,6 +123,7 @@ class ProjectService:
             created_at=project.created_at,
             updated_at=project.updated_at,
             container_type_id=project.container_type_id,
+            pallet_type_id=project.pallet_type_id,
             container_custom_dims=project.container_custom_dims,
             palettes=[PaletteInstanceSchema.from_orm(p) for p in project.palettes],
             last_result=(

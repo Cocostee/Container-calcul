@@ -6,7 +6,7 @@ data access to repositories.
 """
 from typing import Iterator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from api_container.config import settings
@@ -36,6 +36,45 @@ def create_tables() -> None:
     from api_container.app import models  # noqa: F401  (registers mappers)
 
     Base.metadata.create_all(bind=engine)
+    _upgrade_projects_table()
+    _upgrade_placement_results_table()
+
+
+def _upgrade_projects_table() -> None:
+    """Add the selected pallet type to projects created before stage one."""
+    columns = {column["name"] for column in inspect(engine).get_columns("projects")}
+    if "pallet_type_id" not in columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE projects ADD COLUMN pallet_type_id VARCHAR")
+            )
+
+
+def _upgrade_placement_results_table() -> None:
+    """Add JSON detail columns on databases created before palletization.
+
+    The project intentionally has no migration framework yet.  This guarded,
+    idempotent upgrade keeps existing Docker volumes usable while the detailed
+    stage-one result is added to the persisted optimization response.
+    """
+    columns = {
+        column["name"] for column in inspect(engine).get_columns("placement_results")
+    }
+    statements = []
+    if "pallets" not in columns:
+        statements.append(
+            "ALTER TABLE placement_results "
+            "ADD COLUMN pallets JSON NOT NULL DEFAULT '[]'"
+        )
+    if "unplaced_package_count" not in columns:
+        statements.append(
+            "ALTER TABLE placement_results "
+            "ADD COLUMN unplaced_package_count INTEGER NOT NULL DEFAULT 0"
+        )
+    if statements:
+        with engine.begin() as connection:
+            for statement in statements:
+                connection.execute(text(statement))
 
 
 def get_db() -> Iterator[Session]:

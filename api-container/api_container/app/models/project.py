@@ -28,6 +28,10 @@ class Project(Base):
     container_type_id: Mapped[Optional[str]] = mapped_column(
         String, ForeignKey("container_types.id"), nullable=True
     )
+    # Selected pallet type used for the package-to-pallet stage.
+    pallet_type_id: Mapped[Optional[str]] = mapped_column(
+        String, ForeignKey("palette_types.id"), nullable=True
+    )
     # Populated only when the container is "custom" (free dimensions).
     container_custom_dims: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 

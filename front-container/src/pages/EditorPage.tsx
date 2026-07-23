@@ -5,6 +5,7 @@ import { ResultsPanel } from '../components/ResultsPanel'
 import { Scene } from '../components/Scene3D/Scene'
 import { ContainerSelector } from '../components/Sidebar/ContainerSelector'
 import { PaletteForm } from '../components/Sidebar/PaletteForm'
+import { PalletSelector } from '../components/Sidebar/PalletSelector'
 import { ProjectList } from '../components/Sidebar/ProjectList'
 import { Button } from '../components/ui/Button/Button'
 import { Input } from '../components/ui/Input/Input'
@@ -37,22 +38,36 @@ export function EditorPage() {
   }, [activeProjectId, editor.projectId, loadProjectById, setResult])
 
   const sceneContainer = editor.resolveContainer(containerTypes)
-  const paletteCount = editor.palettes.length
-  const isReadyToCalculate = Boolean(sceneContainer) && paletteCount > 0
-
-  const paletteLookup = useMemo(
-    () =>
-      Object.fromEntries(
-        editor.palettes.map((palette) => [
-          palette.clientId,
-          { label: palette.label, weight: palette.weight_kg },
-        ]),
-      ),
+  const packageLineCount = editor.palettes.length
+  const packageCount = useMemo(
+    () => editor.palettes.reduce((total, item) => total + item.quantity, 0),
     [editor.palettes],
   )
+  const effectivePalletId = editor.palletTypeId || paletteTypes[0]?.id || ''
+  const selectedPalletType = useMemo(
+    () => paletteTypes.find((type) => type.id === effectivePalletId) ?? null,
+    [paletteTypes, effectivePalletId],
+  )
+  const selectedPallet = useMemo(
+    () =>
+      selectedPalletType
+        ? {
+            id: selectedPalletType.id,
+            label: selectedPalletType.name,
+            length_cm: selectedPalletType.length_cm,
+            width_cm: selectedPalletType.width_cm,
+            base_height_cm: selectedPalletType.height_cm,
+            max_load_height_cm: selectedPalletType.default_load_height_cm,
+            max_weight_kg: selectedPalletType.max_weight_kg,
+          }
+        : null,
+    [selectedPalletType],
+  )
+  const isReadyToCalculate =
+    Boolean(sceneContainer) && Boolean(selectedPallet) && packageCount > 0
 
   const handleSave = async () => {
-    const saved = await editor.save()
+    const saved = await editor.save(effectivePalletId)
     if (saved) {
       await projects.refresh()
       selectProject(saved.id)
@@ -68,13 +83,13 @@ export function EditorPage() {
   const handleCalculate = async () => {
     let id = editor.projectId
     if (!id) {
-      const saved = await editor.save()
+      const saved = await editor.save(effectivePalletId)
       if (!saved) return
       id = saved.id
       await projects.refresh()
       selectProject(id)
     }
-    const request = editor.buildOptimizeRequest(containerTypes)
+    const request = editor.buildOptimizeRequest(containerTypes, selectedPallet)
     if (!request) return
     await optimization.run(id, request)
   }
@@ -94,8 +109,8 @@ export function EditorPage() {
           </div>
         </div>
         <p className="sidebar__intro">
-          Configurez le conteneur et les palettes avant de calculer la meilleure
-          répartition.
+          Préparez les colis sur une palette, puis optimisez leur placement dans
+          le conteneur.
         </p>
         <ProjectList
           projects={projects.projects}
@@ -111,12 +126,15 @@ export function EditorPage() {
           customDims={editor.customDims}
           onCustomDimChange={editor.setCustomDim}
         />
+        <PalletSelector
+          palletTypes={paletteTypes}
+          value={effectivePalletId}
+          onChange={editor.setPalletTypeId}
+        />
         <PaletteForm
-          paletteTypes={paletteTypes}
           values={paletteForm.values}
           errors={paletteForm.errors}
           setField={paletteForm.setField}
-          applyType={paletteForm.applyType}
           submit={paletteForm.submit}
         />
       </aside>
@@ -127,8 +145,8 @@ export function EditorPage() {
             <p className="workspace-header__eyebrow">Optimisation</p>
             <h1>Préparer un chargement</h1>
             <p className="workspace-header__description">
-              Organisez vos palettes, visualisez le conteneur et lancez le
-              calcul lorsque le projet est prêt.
+              Étape 1 : répartissez les colis sur des palettes. Étape 2 :
+              visualisez leur placement optimisé dans le conteneur.
             </p>
           </div>
           <div
@@ -141,7 +159,7 @@ export function EditorPage() {
           >
             <span className="project-status__dot" aria-hidden="true" />
             {isReadyToCalculate
-              ? `Prêt · ${paletteCount} palette${paletteCount > 1 ? 's' : ''}`
+              ? `Prêt · ${packageCount} colis`
               : 'À compléter'}
           </div>
         </header>
@@ -185,9 +203,9 @@ export function EditorPage() {
                 <h2 id="scene-title">Vue du conteneur</h2>
               </div>
               <span className="panel-heading__meta">
-                {optimization.result?.placements.length ?? 0} palette
-                {(optimization.result?.placements.length ?? 0) > 1 ? 's' : ''}{' '}
-                placée{(optimization.result?.placements.length ?? 0) > 1 ? 's' : ''}
+                {optimization.result?.pallets.length ?? 0} palette
+                {(optimization.result?.pallets.length ?? 0) > 1 ? 's' : ''}{' '}
+                générée{(optimization.result?.pallets.length ?? 0) > 1 ? 's' : ''}
               </span>
             </div>
             <div className="viewport">
@@ -195,7 +213,7 @@ export function EditorPage() {
                 <Scene
                   container={sceneContainer}
                   placements={optimization.result?.placements ?? []}
-                  paletteLookup={paletteLookup}
+                  pallets={optimization.result?.pallets ?? []}
                 />
               ) : (
                 <p className="muted">
@@ -217,10 +235,11 @@ export function EditorPage() {
           <div className="panel-heading">
             <div>
               <p className="panel-heading__eyebrow">Inventaire</p>
-              <h2>Palettes du projet</h2>
+              <h2>Colis à préparer</h2>
             </div>
             <span className="panel-heading__meta">
-              {paletteCount} ligne{paletteCount > 1 ? 's' : ''}
+              {packageCount} colis · {packageLineCount} référence
+              {packageLineCount > 1 ? 's' : ''}
             </span>
           </div>
           <PaletteTable

@@ -1,10 +1,10 @@
 :root {
-  --color-bg: #eaf3f2;
+  --color-bg: #f7f5f0;
   --color-surface: #ffffff;
-  --color-surface-muted: #f5f9f8;
-  --color-border: #c8d8d6;
+  --color-surface-muted: #fbfaf7;
+  --color-border: #dedbd2;
   /* 3:1 minimum against white for controls and icons. */
-  --color-border-strong: #5f7774;
+  --color-border-strong: #6c746e;
   --color-text: #142826;
   /* 4.5:1 minimum against white for regular-size text. */
   --color-muted: #49615e;

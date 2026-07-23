@@ -18,6 +18,7 @@ export interface Project {
   created_at: string
   updated_at: string
   container_type_id: string | null
+  pallet_type_id: string | null
   container_custom_dims: ContainerCustomDims | null
   palettes: PaletteInstance[]
   last_result: PlacementResult | null
@@ -27,6 +28,7 @@ export interface Project {
 export interface ProjectPayload {
   name: string
   container_type_id: string | null
+  pallet_type_id: string | null
   container_custom_dims: ContainerCustomDims | null
   palettes: PaletteInstanceInput[]
 }

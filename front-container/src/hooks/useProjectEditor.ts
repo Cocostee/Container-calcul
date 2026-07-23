@@ -8,6 +8,7 @@ import type {
 import type {
   OptimizeContainer,
   OptimizeRequest,
+  SelectedPallet,
 } from '../types/placement.types'
 import type {
   PaletteDraft,
@@ -33,6 +34,7 @@ export function useProjectEditor() {
   const [containerValue, setContainerValue] = useState<string>(
     CUSTOM_CONTAINER_VALUE,
   )
+  const [palletTypeId, setPalletTypeId] = useState<string | null>(null)
   const [customDims, setCustomDims] = useState<ContainerCustomDims>(
     DEFAULT_CONTAINER_CUSTOM_DIMS,
   )
@@ -81,6 +83,7 @@ export function useProjectEditor() {
     setProjectId(null)
     setName('Nouveau projet')
     setContainerValue(CUSTOM_CONTAINER_VALUE)
+    setPalletTypeId(null)
     setCustomDims(DEFAULT_CONTAINER_CUSTOM_DIMS)
     setPalettes([])
     setSaveError(null)
@@ -90,6 +93,7 @@ export function useProjectEditor() {
     setProjectId(project.id)
     setName(project.name)
     setContainerValue(project.container_type_id ?? CUSTOM_CONTAINER_VALUE)
+    setPalletTypeId(project.pallet_type_id)
     setCustomDims(project.container_custom_dims ?? DEFAULT_CONTAINER_CUSTOM_DIMS)
     setPalettes(
       project.palettes.map((item) => ({
@@ -108,11 +112,12 @@ export function useProjectEditor() {
     setSaveError(null)
   }, [])
 
-  const buildPayload = useCallback((): ProjectPayload => {
+  const buildPayload = useCallback((selectedPalletId = palletTypeId): ProjectPayload => {
     const isCustom = containerValue === CUSTOM_CONTAINER_VALUE
     return {
       name,
       container_type_id: isCustom ? null : containerValue,
+      pallet_type_id: selectedPalletId,
       container_custom_dims: isCustom ? customDims : null,
       palettes: palettes.map((item) => ({
         palette_type_id: item.palette_type_id,
@@ -126,13 +131,13 @@ export function useProjectEditor() {
         rotatable: item.rotatable,
       })),
     }
-  }, [name, containerValue, customDims, palettes])
+  }, [name, containerValue, palletTypeId, customDims, palettes])
 
-  const save = useCallback(async (): Promise<Project | null> => {
+  const save = useCallback(async (selectedPalletId?: string): Promise<Project | null> => {
     setIsSaving(true)
     setSaveError(null)
     try {
-      const payload = buildPayload()
+      const payload = buildPayload(selectedPalletId)
       const saved = projectId
         ? await updateProject(projectId, payload)
         : await createProject(payload)
@@ -179,12 +184,16 @@ export function useProjectEditor() {
   )
 
   const buildOptimizeRequest = useCallback(
-    (containerTypes: ContainerType[]): OptimizeRequest | null => {
+    (
+      containerTypes: ContainerType[],
+      selectedPallet: SelectedPallet | null,
+    ): OptimizeRequest | null => {
       const container = resolveContainer(containerTypes)
-      if (!container || palettes.length === 0) return null
+      if (!container || !selectedPallet || palettes.length === 0) return null
       return {
         container,
-        palettes: palettes.map((item) => ({
+        pallet: selectedPallet,
+        packages: palettes.map((item) => ({
           instance_id: item.clientId,
           length_cm: item.length_cm,
           width_cm: item.width_cm,
@@ -205,6 +214,8 @@ export function useProjectEditor() {
     setName,
     containerValue,
     setContainerValue,
+    palletTypeId,
+    setPalletTypeId,
     customDims,
     setCustomDim,
     palettes,

@@ -17,6 +17,7 @@ class ProjectBase(BaseModel):
 
     name: str
     container_type_id: Optional[str] = None
+    pallet_type_id: Optional[str] = None
     container_custom_dims: Optional[dict] = None
 
 

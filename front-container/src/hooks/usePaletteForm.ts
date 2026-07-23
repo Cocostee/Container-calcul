@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { z } from 'zod'
 
-import type { PaletteInstanceInput, PaletteType } from '../types/palette.types'
-import { DEFAULT_PALETTE_FORM } from '../utils/constants'
+import type { PaletteInstanceInput } from '../types/palette.types'
+import { DEFAULT_PACKAGE_FORM } from '../utils/constants'
 
-// Validation for the "add palette" form (kept in the hook, not the component).
+// Validation for the "add package" form (kept in the hook, not the component).
 const paletteFormSchema = z.object({
   label: z.string().min(1, 'Label requis'),
   palette_type_id: z.string().nullable(),
@@ -23,10 +23,10 @@ export type PaletteFormErrors = Partial<Record<keyof PaletteFormValues, string>>
 const EMPTY_FORM: PaletteFormValues = {
   label: '',
   palette_type_id: null,
-  ...DEFAULT_PALETTE_FORM,
+  ...DEFAULT_PACKAGE_FORM,
 }
 
-// Drives the add-palette form; calls onAdd with a valid pallet line on submit.
+// Drives the add-package form; calls onAdd with a valid package line on submit.
 export function usePaletteForm(onAdd: (values: PaletteInstanceInput) => void) {
   const [values, setValues] = useState<PaletteFormValues>(EMPTY_FORM)
   const [errors, setErrors] = useState<PaletteFormErrors>({})
@@ -36,22 +36,6 @@ export function usePaletteForm(onAdd: (values: PaletteInstanceInput) => void) {
     value: PaletteFormValues[K],
   ) => {
     setValues((prev) => ({ ...prev, [name]: value }))
-  }
-
-  // Pre-fill dimensions from a selected reference type (still editable).
-  const applyType = (type: PaletteType | null) => {
-    setValues((prev) => ({
-      ...prev,
-      palette_type_id: type?.id ?? null,
-      ...(type
-        ? {
-            length_cm: type.length_cm,
-            width_cm: type.width_cm,
-            height_cm: type.default_load_height_cm,
-            label: prev.label || type.name,
-          }
-        : {}),
-    }))
   }
 
   const submit = () => {
@@ -67,8 +51,8 @@ export function usePaletteForm(onAdd: (values: PaletteInstanceInput) => void) {
     }
     setErrors({})
     onAdd(parsed.data)
-    setValues({ ...EMPTY_FORM, palette_type_id: values.palette_type_id })
+    setValues(EMPTY_FORM)
   }
 
-  return { values, errors, setField, applyType, submit }
+  return { values, errors, setField, submit }
 }

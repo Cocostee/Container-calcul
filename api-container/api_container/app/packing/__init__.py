@@ -10,6 +10,21 @@ from api_container.app.packing.entities import (
     Placement,
     PackingResult,
 )
+from api_container.app.packing.palletization import (
+    PackedPallet,
+    PalletizationResult,
+    pack_into_pallets,
+)
 from api_container.app.packing.packer import pack
 
-__all__ = ("Bin", "Dimensions", "Item", "Placement", "PackingResult", "pack")
+__all__ = (
+    "Bin",
+    "Dimensions",
+    "Item",
+    "Placement",
+    "PackingResult",
+    "PackedPallet",
+    "PalletizationResult",
+    "pack",
+    "pack_into_pallets",
+)

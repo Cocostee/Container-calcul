@@ -13,12 +13,12 @@ export const DEFAULT_CONTAINER_CUSTOM_DIMS = {
   max_weight_kg: 26000,
 }
 
-// Default values pre-filling the "add palette" form.
-export const DEFAULT_PALETTE_FORM = {
-  length_cm: 120,
-  width_cm: 80,
-  height_cm: 100,
-  weight_kg: 400,
+// Default values pre-filling the "add package" form.
+export const DEFAULT_PACKAGE_FORM = {
+  length_cm: 60,
+  width_cm: 40,
+  height_cm: 40,
+  weight_kg: 20,
   quantity: 1,
   stackable: true,
   rotatable: true,

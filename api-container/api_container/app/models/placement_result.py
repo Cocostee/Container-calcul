@@ -26,5 +26,10 @@ class PlacementResult(Base):
     unplaced_count: Mapped[int] = mapped_column(Integer, nullable=False)
     # List of {palette_instance_id, x, y, z, length, width, height, rotation}.
     placements: Mapped[List[dict]] = mapped_column(JSON, nullable=False)
+    # Generated pallets and their nested package placements (stage 1).
+    pallets: Mapped[List[dict]] = mapped_column(JSON, nullable=False, default=list)
+    unplaced_package_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0
+    )
 
     project: Mapped["Project"] = relationship(back_populates="results")

@@ -70,22 +70,53 @@ export function ResultsPanel({
 
       {result ? (
         <div className="results-panel__body">
+          <div className="palletization-summary">
+            <span className="palletization-summary__number">
+              {result.pallets.length}
+            </span>
+            <div>
+              <strong>
+                palette{result.pallets.length > 1 ? 's' : ''} générée
+                {result.pallets.length > 1 ? 's' : ''}
+              </strong>
+              <p>
+                {result.pallets.reduce(
+                  (total, pallet) => total + pallet.package_count,
+                  0,
+                )}{' '}
+                colis répartis à l&apos;étape 1
+              </p>
+            </div>
+          </div>
           <FillBar label="Remplissage volumique" rate={result.fill_rate_volume} />
           <FillBar label="Remplissage pondéral" rate={result.fill_rate_weight} />
           <div className="results-panel__unplaced">
-            {result.unplaced_count > 0 ? (
+            {result.unplaced_package_count > 0 ? (
               <div className="results-panel__alert" role="alert">
                 <Badge variant="danger">
-                  {result.unplaced_count} palette(s) non placée(s)
+                  {result.unplaced_package_count} colis non réparti
+                  {result.unplaced_package_count > 1 ? 's' : ''}
                 </Badge>
                 <p>
-                  Conteneur saturé : impossible d&apos;ajouter davantage de
-                  palettes. Retirez-en, réduisez les dimensions ou choisissez un
-                  conteneur plus grand.
+                  Certains colis dépassent la surface, la hauteur ou la charge
+                  maximale de la palette sélectionnée.
+                </p>
+              </div>
+            ) : result.unplaced_count > 0 ? (
+              <div className="results-panel__alert" role="alert">
+                <Badge variant="danger">
+                  {result.unplaced_count} palette(s) non placée(s) dans le
+                  conteneur
+                </Badge>
+                <p>
+                  Conteneur saturé : choisissez un conteneur plus grand ou une
+                  palette moins haute pour y placer tout le stock.
                 </p>
               </div>
             ) : (
-              <Badge variant="success">Toutes les palettes placées</Badge>
+              <Badge variant="success">
+                Tous les colis et toutes les palettes sont placés
+              </Badge>
             )}
           </div>
         </div>

@@ -22,7 +22,7 @@ const HEADERS = [
   'Haut.',
   'Poids',
   'Qté',
-  'Empil.',
+  'Empilable',
   'Rot.',
   'Actions',
 ]
@@ -34,17 +34,17 @@ export function PaletteTable({
   onRemove,
 }: PaletteTableProps) {
   if (palettes.length === 0) {
-    return <p className="muted">Aucune palette ajoutée pour l'instant.</p>
+    return <p className="muted">Aucun colis ajouté pour l'instant.</p>
   }
 
   return (
     <div className="palette-table">
-      <Table caption="Palettes à charger" headers={HEADERS}>
+      <Table caption="Colis à répartir sur les palettes" headers={HEADERS}>
         {palettes.map((palette) => (
           <tr key={palette.clientId}>
             <td>
               <Input
-                label="Label"
+                label="Référence du colis"
                 value={palette.label}
                 onChange={(v) => onUpdate(palette.clientId, { label: v })}
               />
@@ -79,14 +79,14 @@ export function PaletteTable({
             </td>
             <td>
               <NumberInput
-                label="Quantité"
+                label="Quantité de colis"
                 value={palette.quantity}
                 onChange={(v) => onUpdate(palette.clientId, { quantity: v })}
               />
             </td>
             <td>
               <Checkbox
-                label="Empilable"
+                label="Colis empilable"
                 className="table-checkbox"
                 checked={palette.stackable}
                 onChange={(v) => onUpdate(palette.clientId, { stackable: v })}
@@ -104,14 +104,14 @@ export function PaletteTable({
               <div className="row-actions">
                 <Button
                   variant="ghost"
-                  aria-label={`Dupliquer la palette ${palette.label}`}
+                  aria-label={`Dupliquer le colis ${palette.label}`}
                   onClick={() => onDuplicate(palette.clientId)}
                 >
                   Dupliquer
                 </Button>
                 <Button
                   variant="danger"
-                  aria-label={`Supprimer la palette ${palette.label}`}
+                  aria-label={`Supprimer le colis ${palette.label}`}
                   onClick={() => onRemove(palette.clientId)}
                 >
                   Supprimer
