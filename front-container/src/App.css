@@ -7,6 +7,21 @@
     var(--color-bg);
 }
 
+.route-feedback {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-3);
+  width: min(100% - 40px, 720px);
+  min-height: 100dvh;
+  margin: 0 auto;
+}
+
+.route-feedback > p:not(.workspace-header__eyebrow) {
+  color: var(--color-muted);
+}
+
 /* ---- Project home: this is intentionally a full page with no sidebar ---- */
 .project-home {
   display: flex;

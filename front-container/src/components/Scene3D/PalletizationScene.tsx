@@ -50,7 +50,7 @@ export function PalletizationScene({ pallets }: PalletizationSceneProps) {
     const depthGap = maxWidth + 0.62
     const target: [number, number, number] = [0, maxHeight / 2, 0]
     const distance =
-      Math.max(columns * horizontalGap, rows * depthGap, maxHeight) * 1.55
+      Math.max(columns * horizontalGap, rows * depthGap, maxHeight) * 1.28
 
     const positionFor = (
       pallet: GeneratedPallet,
@@ -72,7 +72,8 @@ export function PalletizationScene({ pallets }: PalletizationSceneProps) {
     <div className="palletization-scene">
       <p className="palletization-scene__hint">
         Toutes les palettes sont séparées pour contrôler visuellement les colis.
-        Faites glisser la vue pour les inspecter.
+        Faites glisser la vue pour les inspecter. Les flèches et la traverse
+        colorée indiquent le sens de la palette et l&apos;entrée des fourches.
       </p>
       <Canvas
         aria-label="Vue 3D des palettes générées et de tous leurs colis"
@@ -98,6 +99,7 @@ export function PalletizationScene({ pallets }: PalletizationSceneProps) {
                   pallet.height * SCALE,
                   pallet.width * SCALE,
                 ]}
+                baseHeight={pallet.base_height * SCALE}
                 color={colorByPaletteType(pallet.id)}
                 label={pallet.label}
                 weightKg={pallet.weight_kg}

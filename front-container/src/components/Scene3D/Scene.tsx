@@ -212,7 +212,8 @@ export function Scene({ container, placements, pallets }: SceneProps) {
       ) : null}
       <p className="scene3d__hint">
         Cliquez sur une palette pour révéler les colis et leur empilement. La
-        vue éclatée les sépare pour une inspection plus rapide.
+        vue éclatée les sépare pour une inspection plus rapide. Les flèches et
+        la traverse colorée indiquent le sens de la palette.
       </p>
       <Canvas
         aria-label="Vue 3D du conteneur, des palettes générées et des colis"
@@ -239,6 +240,7 @@ export function Scene({ container, placements, pallets }: SceneProps) {
                 placement.height * SCALE,
                 placement.width * SCALE,
               ]}
+              baseHeight={pallet.base_height * SCALE}
               color={colorByPaletteType(pallet.id)}
               label={pallet.label}
               weightKg={pallet.weight_kg}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import { ConfigurationSummary } from '../components/ConfigurationSummary'
 import { PaletteTable } from '../components/PaletteTable'
@@ -22,9 +23,12 @@ import { usePaletteForm } from '../hooks/usePaletteForm'
 import { usePaletteTypes } from '../hooks/usePaletteTypes'
 import { useProjectEditor } from '../hooks/useProjectEditor'
 import { useProjects } from '../hooks/useProjects'
+import {
+  NEW_PROJECT_ID,
+  newProjectStepPath,
+  projectStepPath,
+} from '../router/workflowRoutes'
 import { CUSTOM_CONTAINER_VALUE } from '../utils/constants'
-
-type Screen = 'projects' | 'workflow'
 
 const STEP_COPY: Record<WorkflowStepNumber, { title: string; description: string }> = {
   1: {
@@ -45,33 +49,66 @@ const STEP_COPY: Record<WorkflowStepNumber, { title: string; description: string
 }
 
 export function EditorPage() {
+  const navigate = useNavigate()
+  const { projectId: routeProjectId, step: routeStep } = useParams()
   const { containerTypes } = useContainerTypes()
   const { paletteTypes } = usePaletteTypes()
   const projects = useProjects()
   const editor = useProjectEditor()
   const optimization = useOptimization()
   const paletteForm = usePaletteForm(editor.addPalette)
-  const { activeProjectId, selectProject, clearProject } = useProjectContext()
-  const [screen, setScreen] = useState<Screen>('projects')
-  const [currentStep, setCurrentStep] = useState<WorkflowStepNumber>(1)
+  const { selectProject, clearProject } = useProjectContext()
+  const [routeError, setRouteError] = useState<string | null>(null)
   const lastCalculatedSignature = useRef<string | null>(null)
   const calculateRef = useRef<() => Promise<boolean>>(async () => false)
+  const handledRouteProjectId = useRef<string | null>(null)
 
   const { loadProjectById } = editor
   const { setResult } = optimization
+  const isWorkflowRoute = Boolean(routeProjectId && routeStep)
+  const currentStep = (Number(routeStep) || 1) as WorkflowStepNumber
 
-  // Load a saved project only after the user opens it from the project home.
+  // URL middleware validates the shape of the route; this effect loads its
+  // project payload and makes browser refresh/back navigation reliable.
   useEffect(() => {
-    if (screen !== 'workflow') return
-    if (!activeProjectId || activeProjectId === editor.projectId) return
-    void loadProjectById(activeProjectId).then((project) => {
-      setResult(project?.last_result ?? null)
+    if (!isWorkflowRoute || !routeProjectId) {
+      handledRouteProjectId.current = null
+      return
+    }
+
+    if (handledRouteProjectId.current === routeProjectId) return
+    handledRouteProjectId.current = routeProjectId
+    setRouteError(null)
+
+    if (routeProjectId === NEW_PROJECT_ID) {
+      editor.reset()
+      optimization.setResult(null)
+      clearProject()
+      return
+    }
+
+    if (routeProjectId === editor.projectId) {
+      selectProject(routeProjectId)
+      return
+    }
+
+    void loadProjectById(routeProjectId).then((project) => {
+      if (!project) {
+        setRouteError('Ce projet est introuvable ou ne peut pas être chargé.')
+        return
+      }
+      selectProject(project.id)
+      setResult(project.last_result)
     })
   }, [
-    activeProjectId,
+    clearProject,
     editor.projectId,
+    editor,
+    isWorkflowRoute,
     loadProjectById,
-    screen,
+    optimization,
+    routeProjectId,
+    selectProject,
     setResult,
   ])
 
@@ -104,6 +141,36 @@ export function EditorPage() {
   const isConfigured = Boolean(sceneContainer) && Boolean(selectedPallet)
   const isReadyToCalculate = isConfigured && packageCount > 0
   const generatedPalletCount = optimization.result?.pallets.length ?? 0
+  const isRouteLoading =
+    isWorkflowRoute &&
+    routeProjectId !== NEW_PROJECT_ID &&
+    routeProjectId !== editor.projectId &&
+    !routeError
+
+  // Step 3 only makes sense when the persisted project has an optimization
+  // result. This is the data-level half of the URL access middleware.
+  useEffect(() => {
+    if (
+      currentStep !== 3 ||
+      isRouteLoading ||
+      routeError ||
+      !routeProjectId ||
+      routeProjectId === NEW_PROJECT_ID ||
+      routeProjectId !== editor.projectId ||
+      optimization.result
+    ) {
+      return
+    }
+    navigate(projectStepPath(routeProjectId, 2), { replace: true })
+  }, [
+    currentStep,
+    editor.projectId,
+    isRouteLoading,
+    navigate,
+    optimization.result,
+    routeError,
+    routeProjectId,
+  ])
   const optimizationSignature = useMemo(
     () =>
       JSON.stringify({
@@ -150,26 +217,27 @@ export function EditorPage() {
   }, [editor, effectivePalletId, projects, selectProject])
 
   const handleSave = async () => {
-    await saveProject()
+    const savedProjectId = await saveProject()
+    if (savedProjectId) {
+      navigate(projectStepPath(savedProjectId, currentStep), { replace: true })
+    }
   }
 
   const handleCreate = () => {
     editor.reset()
     optimization.setResult(null)
     clearProject()
-    setCurrentStep(1)
-    setScreen('workflow')
+    navigate(newProjectStepPath())
   }
 
   const handleOpen = (id: string) => {
     selectProject(id)
-    setCurrentStep(1)
-    setScreen('workflow')
+    navigate(projectStepPath(id, 1))
   }
 
   const handleBackToProjects = () => {
     void projects.refresh()
-    setScreen('projects')
+    navigate('/')
   }
 
   const handleDelete = async (id: string) => {
@@ -179,6 +247,7 @@ export function EditorPage() {
       optimization.setResult(null)
       clearProject()
     }
+    if (id === routeProjectId) navigate('/', { replace: true })
   }
 
   const handleCalculate = useCallback(async (): Promise<boolean> => {
@@ -217,25 +286,33 @@ export function EditorPage() {
     return () => window.clearTimeout(timer)
   }, [currentStep, isReadyToCalculate, optimizationSignature, setResult])
 
-  const handleStepChange = (step: WorkflowStepNumber) => {
+  const handleStepChange = async (step: WorkflowStepNumber) => {
     if (step === 3 && !optimization.result) return
-    setCurrentStep(step)
+    if (step === currentStep) return
+
+    let projectId =
+      routeProjectId && routeProjectId !== NEW_PROJECT_ID
+        ? routeProjectId
+        : editor.projectId
+    if (!projectId) projectId = await saveProject()
+    if (projectId) navigate(projectStepPath(projectId, step))
   }
 
   const handleStepOneNext = async () => {
     if (!isConfigured) return
-    if (await saveProject()) setCurrentStep(2)
+    const projectId = await saveProject()
+    if (projectId) navigate(projectStepPath(projectId, 2))
   }
 
   const handleStepTwoAction = async () => {
     if (optimization.result) {
-      setCurrentStep(3)
+      if (editor.projectId) navigate(projectStepPath(editor.projectId, 3))
       return
     }
     await handleCalculate()
   }
 
-  if (screen === 'projects') {
+  if (!isWorkflowRoute) {
     return (
       <ProjectHome
         projects={projects.projects}
@@ -245,6 +322,28 @@ export function EditorPage() {
         onOpen={handleOpen}
         onDelete={handleDelete}
       />
+    )
+  }
+
+  if (isRouteLoading) {
+    return (
+      <main className="route-feedback" aria-live="polite">
+        <p className="workspace-header__eyebrow">Ouverture du projet</p>
+        <h1>Chargement du plan de chargement…</h1>
+      </main>
+    )
+  }
+
+  if (routeError) {
+    return (
+      <main className="route-feedback">
+        <p className="workspace-header__eyebrow">URL indisponible</p>
+        <h1>Projet non disponible</h1>
+        <p>{routeError}</p>
+        <Button variant="primary" onClick={() => navigate('/', { replace: true })}>
+          Revenir aux projets
+        </Button>
+      </main>
     )
   }
 
@@ -356,7 +455,7 @@ export function EditorPage() {
           packageCount={packageCount}
           palletCount={generatedPalletCount}
           hasResult={Boolean(optimization.result)}
-          onStepChange={handleStepChange}
+          onStepChange={(step) => void handleStepChange(step)}
         />
 
         {editor.saveError ? (
@@ -518,7 +617,9 @@ export function EditorPage() {
           {currentStep > 1 ? (
             <Button
               variant="secondary"
-              onClick={() => setCurrentStep((currentStep - 1) as WorkflowStepNumber)}
+              onClick={() =>
+                void handleStepChange((currentStep - 1) as WorkflowStepNumber)
+              }
             >
               ← Étape précédente
             </Button>
