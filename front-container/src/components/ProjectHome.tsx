@@ -6,6 +6,7 @@ interface ProjectHomeProps {
   isLoading: boolean
   error: string | null
   onCreate: () => void
+  onImport: () => void
   onOpen: (id: string) => void
   onDelete: (id: string) => void
 }
@@ -16,6 +17,7 @@ export function ProjectHome({
   isLoading,
   error,
   onCreate,
+  onImport,
   onOpen,
   onDelete,
 }: ProjectHomeProps) {
@@ -37,9 +39,14 @@ export function ProjectHome({
             </p>
           </div>
         </div>
-        <Button variant="primary" onClick={onCreate}>
-          Ajouter un projet
-        </Button>
+        <div className="project-home__actions">
+          <Button variant="secondary" onClick={onImport}>
+            Importer un fichier
+          </Button>
+          <Button variant="primary" onClick={onCreate}>
+            Ajouter un projet
+          </Button>
+        </div>
       </header>
 
       {error ? (
@@ -69,6 +76,9 @@ export function ProjectHome({
             </p>
             <Button variant="primary" onClick={onCreate}>
               Ajouter un projet
+            </Button>
+            <Button variant="secondary" onClick={onImport}>
+              Importer un fichier
             </Button>
           </div>
         ) : null}

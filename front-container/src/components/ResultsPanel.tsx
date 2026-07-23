@@ -8,6 +8,7 @@ interface ResultsPanelProps {
   result: PlacementResult | null
   isOptimizing: boolean
   error: string | null
+  isImported?: boolean
   onRecalculate: () => void
 }
 
@@ -43,8 +44,20 @@ export function ResultsPanel({
   result,
   isOptimizing,
   error,
+  isImported = false,
   onRecalculate,
 }: ResultsPanelProps) {
+  const displayedPalletCount = result
+    ? result.pallets.length || result.placements.length
+    : 0
+  const isImportedPalletResult = Boolean(
+    result && result.pallets.length === 0 && result.placements.length > 0,
+  )
+  const distributedPackageCount = result?.pallets.reduce(
+    (total, pallet) => total + pallet.package_count,
+    0,
+  ) ?? 0
+
   return (
     <section className="results-panel" aria-labelledby="results-title">
       <div className="results-panel__header">
@@ -52,13 +65,15 @@ export function ResultsPanel({
           <p className="panel-heading__eyebrow">Suivi</p>
           <h2 id="results-title">Résultats</h2>
         </div>
-        <Button
-          variant="primary"
-          onClick={onRecalculate}
-          disabled={isOptimizing}
-        >
-          {isOptimizing ? 'Calcul…' : 'Recalculer'}
-        </Button>
+        {!isImported ? (
+          <Button
+            variant="primary"
+            onClick={onRecalculate}
+            disabled={isOptimizing}
+          >
+            {isOptimizing ? 'Calcul…' : 'Recalculer'}
+          </Button>
+        ) : null}
       </div>
 
       {error ? (
@@ -72,19 +87,18 @@ export function ResultsPanel({
         <div className="results-panel__body">
           <div className="palletization-summary">
             <span className="palletization-summary__number">
-              {result.pallets.length}
+              {displayedPalletCount}
             </span>
             <div>
               <strong>
-                palette{result.pallets.length > 1 ? 's' : ''} générée
-                {result.pallets.length > 1 ? 's' : ''}
+                palette{displayedPalletCount > 1 ? 's' : ''}{' '}
+                {isImportedPalletResult ? 'importée' : 'générée'}
+                {displayedPalletCount > 1 ? 's' : ''}
               </strong>
               <p>
-                {result.pallets.reduce(
-                  (total, pallet) => total + pallet.package_count,
-                  0,
-                )}{' '}
-                colis répartis à l&apos;étape 2
+                {isImportedPalletResult
+                  ? 'Palettes prêtes à être contrôlées dans le conteneur'
+                  : `${distributedPackageCount} colis répartis à l’étape 2`}
               </p>
             </div>
           </div>

@@ -30,4 +30,5 @@ export type PaletteInstanceInput = Omit<PaletteInstance, 'id'>
 // A pallet line while editing locally, tracked by a stable client id.
 export interface PaletteDraft extends PaletteInstanceInput {
   clientId: string
+  persistedId?: string
 }

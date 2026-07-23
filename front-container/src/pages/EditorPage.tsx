@@ -121,7 +121,7 @@ export function EditorPage() {
     () => editor.palettes.reduce((total, item) => total + item.quantity, 0),
     [editor.palettes],
   )
-  const effectivePalletId = editor.palletTypeId || paletteTypes[0]?.id || ''
+  const effectivePalletId = editor.palletTypeId ?? ''
   const selectedPalletType = useMemo(
     () => paletteTypes.find((type) => type.id === effectivePalletId) ?? null,
     [paletteTypes, effectivePalletId],
@@ -141,9 +141,18 @@ export function EditorPage() {
         : null,
     [selectedPalletType],
   )
-  const isConfigured = Boolean(sceneContainer) && Boolean(selectedPallet)
+  const isImportedProject =
+    editor.palletTypeId === null &&
+    editor.palettes.length > 0 &&
+    editor.palettes.every((pallet) =>
+      pallet.label.startsWith('Palette importée'),
+    )
+  const isConfigured =
+    Boolean(sceneContainer) && (Boolean(selectedPallet) || isImportedProject)
   const isReadyToCalculate = isConfigured && packageCount > 0
-  const generatedPalletCount = optimization.result?.pallets.length ?? 0
+  const generatedPalletCount = optimization.result
+    ? optimization.result.pallets.length || optimization.result.placements.length
+    : 0
   const isRouteLoading =
     isWorkflowRoute &&
     routeProjectId !== NEW_PROJECT_ID &&
@@ -341,6 +350,7 @@ export function EditorPage() {
         isLoading={projects.loading}
         error={projects.error}
         onCreate={handleCreate}
+        onImport={() => navigate('/imports/new')}
         onOpen={handleOpen}
         onDelete={handleDelete}
       />
@@ -419,6 +429,7 @@ export function EditorPage() {
               containerName={containerName}
               container={sceneContainer}
               pallet={selectedPalletType}
+              palletLabel={isImportedProject ? 'Palettes importées' : undefined}
               step={currentStep}
             />
             <PaletteForm
@@ -433,6 +444,7 @@ export function EditorPage() {
             containerName={containerName}
             container={sceneContainer}
             pallet={selectedPalletType}
+            palletLabel={isImportedProject ? 'Palettes importées' : undefined}
             step={currentStep}
           />
         )}
@@ -470,7 +482,7 @@ export function EditorPage() {
             >
               <span className="project-status__dot" aria-hidden="true" />
               {isReadyToCalculate
-                ? `Prêt · ${packageCount} colis`
+                ? `Prêt · ${packageCount} ${isImportedProject ? 'palettes importées' : 'colis'}`
                 : 'À compléter'}
             </div>
           </div>
@@ -521,6 +533,7 @@ export function EditorPage() {
           packageCount={packageCount}
           palletCount={generatedPalletCount}
           hasResult={Boolean(optimization.result)}
+          isImported={isImportedProject}
           onStepChange={(step) => void handleStepChange(step)}
         />
 
@@ -647,7 +660,8 @@ export function EditorPage() {
                 </div>
                 <span className="panel-heading__meta">
                   {generatedPalletCount} palette
-                  {generatedPalletCount > 1 ? 's' : ''} générée
+                  {generatedPalletCount > 1 ? 's' : ''}{' '}
+                  {isImportedProject ? 'importée' : 'générée'}
                   {generatedPalletCount > 1 ? 's' : ''}
                 </span>
               </div>
@@ -661,6 +675,17 @@ export function EditorPage() {
                     container={sceneContainer}
                     placements={optimization.result?.placements ?? []}
                     pallets={optimization.result?.pallets ?? []}
+                    fallbackPallets={editor.palettes.flatMap((pallet) =>
+                      pallet.persistedId
+                        ? [
+                            {
+                              id: pallet.persistedId,
+                              label: pallet.label,
+                              weight_kg: pallet.weight_kg,
+                            },
+                          ]
+                        : [],
+                    )}
                   />
                 ) : (
                   <p className="muted">
@@ -674,6 +699,7 @@ export function EditorPage() {
               result={optimization.result}
               isOptimizing={optimization.isOptimizing}
               error={optimization.error}
+              isImported={isImportedProject}
               onRecalculate={() => void handleCalculate()}
             />
           </section>

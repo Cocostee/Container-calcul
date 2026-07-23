@@ -40,6 +40,13 @@
   gap: var(--space-5);
 }
 
+.project-home__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
 .project-home__brand {
   display: flex;
   align-items: flex-start;
@@ -123,6 +130,153 @@
 
 .project-home__empty p {
   color: var(--color-muted);
+}
+
+/* ---- Import: a focused, sidebar-free preparation flow ---- */
+.import-plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: min(100% - 40px, 920px);
+  min-height: 100dvh;
+  padding: clamp(32px, 6vw, 76px) 0;
+  margin: 0 auto;
+}
+
+.import-plan__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.import-plan__header > div > p:last-child {
+  max-width: 700px;
+  margin-top: var(--space-2);
+  color: var(--color-muted);
+}
+
+.import-plan__card {
+  padding: clamp(20px, 4vw, 34px);
+  background: rgba(255, 255, 255, 0.91);
+  border: 1px solid rgba(120, 120, 108, 0.25);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.import-plan__fields {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(220px, 0.8fr);
+  gap: var(--space-4);
+  align-items: end;
+}
+
+.import-file-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.import-file-field .ui-label {
+  flex-basis: 100%;
+}
+
+.import-file-field__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.import-file-field__name {
+  min-width: 0;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.import-plan__container,
+.import-plan__note,
+.import-plan__progress {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  color: var(--color-primary-hover);
+  font-size: 0.9rem;
+  background: var(--color-primary-soft);
+  border-left: 3px solid var(--color-primary);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.import-preview-list,
+.import-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.import-preview-list li,
+.import-results-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.import-preview-list li > div,
+.import-results-list li > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.import-preview-list strong,
+.import-results-list strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-preview-list span,
+.import-results-list span {
+  color: var(--color-muted);
+  font-size: 0.84rem;
+}
+
+.import-plan__note {
+  color: #795b15;
+  background: #fff4d6;
+  border-color: #d3a52a;
+}
+
+.import-plan__submit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.import-plan__submit p {
+  color: var(--color-muted);
+  font-size: 0.88rem;
+}
+
+.import-plan__progress {
+  margin: 0;
 }
 
 /* ---- Sidebar: preparation remains visible without overwhelming the page ---- */
@@ -1067,8 +1221,36 @@
     flex-direction: column;
   }
 
-  .project-home__header > .ui-button {
+  .project-home__actions {
     width: 100%;
+  }
+
+  .project-home__actions .ui-button {
+    flex: 1;
+  }
+
+  .import-plan {
+    width: min(100% - 32px, 920px);
+    padding: var(--space-5) 0;
+  }
+
+  .import-plan__header,
+  .import-plan__submit {
+    flex-direction: column;
+  }
+
+  .import-plan__header > .ui-button,
+  .import-plan__submit .ui-button {
+    width: 100%;
+  }
+
+  .import-plan__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .import-results-list li {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .project-home__content {
