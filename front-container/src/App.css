@@ -1,0 +1,225 @@
+.editor {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  height: 100vh;
+  background: var(--color-bg);
+}
+
+/* ---- Sidebar: airy stack of cards ---- */
+.sidebar {
+  background: var(--color-bg);
+  border-right: 1px solid var(--color-border);
+  padding: var(--space-5);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* ---- Workspace: dashboard of cards ---- */
+.workspace {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-y: auto;
+  padding: var(--space-4);
+  gap: var(--space-4);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.topbar__actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+/* ---- 3D scene: reduced, framed card ---- */
+.viewport {
+  flex: 0 0 auto;
+  height: 44vh;
+  min-height: 320px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.viewport .muted {
+  color: #e2e8f0;
+  font-size: 1rem;
+}
+
+.palettes-panel,
+.results-panel {
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---- Form layout helpers ---- */
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.checkbox-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-5);
+}
+
+/* ---- Project list ---- */
+.project-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.project-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.project-list__item--active {
+  background: var(--color-bg);
+  border-radius: var(--radius);
+}
+
+.project-list__select {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 2px;
+}
+
+.project-list__name {
+  font-weight: 600;
+}
+
+.row-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ---- 3D scene overlays ---- */
+.scene3d {
+  position: absolute;
+  inset: 0;
+}
+
+.scene3d__views {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 1;
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ---- Results ---- */
+.fill-bar {
+  margin-bottom: var(--space-4);
+}
+
+.fill-bar__head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.fill-bar__track {
+  height: 12px;
+  background: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.fill-bar__value {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 999px;
+}
+
+.results-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.results-panel__unplaced {
+  margin-top: var(--space-3);
+}
+
+.results-panel__alert {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid #fecaca;
+  border-left: 4px solid var(--color-danger);
+  border-radius: var(--radius);
+  background: #fef2f2;
+}
+
+.results-panel__alert p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #7f1d1d;
+}
+
+/* ---- 3D hover tooltip ---- */
+.mesh-tooltip {
+  background: rgba(15, 23, 42, 0.92);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  pointer-events: none;
+  white-space: nowrap;
+}

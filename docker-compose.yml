@@ -1,0 +1,46 @@
+services:
+  frontend:
+    build: ./front-container
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./front-container:/app
+      - /app/node_modules
+
+  backend:
+    build:
+      context: ./api-container
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://app_user:app_password@db:5432/container_app
+      - FASTAPI_USE_REDIS=false
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./api-container:/app
+
+  db:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=app_user
+      - POSTGRES_PASSWORD=app_password
+      - POSTGRES_DB=container_app
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d container_app"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:

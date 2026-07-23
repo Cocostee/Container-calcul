@@ -1,0 +1,18 @@
+# Changes here will be overwritten by Copier
+_commit: 0.6.1
+_src_path: https://github.com/fastapi-mvc/copier-project.git
+aiohttp: false
+author: Cocostee
+chart_name: api-container
+container_image_name: api-container
+email: clementld76@gmail.com
+github_actions: true
+helm: true
+license: 'no'
+nix: false
+project_description: This project was generated with fastapi-mvc.
+project_name: api-container
+redis: true
+repo_url: https://your.repo.url.here
+script_name: api-container
+version: 0.1.0
