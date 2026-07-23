@@ -112,44 +112,56 @@ export function useProjectEditor() {
     setSaveError(null)
   }, [])
 
-  const buildPayload = useCallback((selectedPalletId = palletTypeId): ProjectPayload => {
-    const isCustom = containerValue === CUSTOM_CONTAINER_VALUE
-    return {
-      name,
-      container_type_id: isCustom ? null : containerValue,
-      pallet_type_id: selectedPalletId,
-      container_custom_dims: isCustom ? customDims : null,
-      palettes: palettes.map((item) => ({
-        palette_type_id: item.palette_type_id,
-        label: item.label,
-        length_cm: item.length_cm,
-        width_cm: item.width_cm,
-        height_cm: item.height_cm,
-        weight_kg: item.weight_kg,
-        quantity: item.quantity,
-        stackable: item.stackable,
-        rotatable: item.rotatable,
-      })),
-    }
-  }, [name, containerValue, palletTypeId, customDims, palettes])
+  const buildPayload = useCallback(
+    (
+      selectedPalletId = palletTypeId,
+      projectName = name,
+    ): ProjectPayload => {
+      const isCustom = containerValue === CUSTOM_CONTAINER_VALUE
+      return {
+        name: projectName,
+        container_type_id: isCustom ? null : containerValue,
+        pallet_type_id: selectedPalletId,
+        container_custom_dims: isCustom ? customDims : null,
+        palettes: palettes.map((item) => ({
+          palette_type_id: item.palette_type_id,
+          label: item.label,
+          length_cm: item.length_cm,
+          width_cm: item.width_cm,
+          height_cm: item.height_cm,
+          weight_kg: item.weight_kg,
+          quantity: item.quantity,
+          stackable: item.stackable,
+          rotatable: item.rotatable,
+        })),
+      }
+    },
+    [name, containerValue, palletTypeId, customDims, palettes],
+  )
 
-  const save = useCallback(async (selectedPalletId?: string): Promise<Project | null> => {
-    setIsSaving(true)
-    setSaveError(null)
-    try {
-      const payload = buildPayload(selectedPalletId)
-      const saved = projectId
-        ? await updateProject(projectId, payload)
-        : await createProject(payload)
-      loadProject(saved)
-      return saved
-    } catch (err) {
-      setSaveError((err as Error).message)
-      return null
-    } finally {
-      setIsSaving(false)
-    }
-  }, [projectId, buildPayload, loadProject])
+  const save = useCallback(
+    async (
+      selectedPalletId?: string,
+      projectName?: string,
+    ): Promise<Project | null> => {
+      setIsSaving(true)
+      setSaveError(null)
+      try {
+        const payload = buildPayload(selectedPalletId, projectName)
+        const saved = projectId
+          ? await updateProject(projectId, payload)
+          : await createProject(payload)
+        loadProject(saved)
+        return saved
+      } catch (err) {
+        setSaveError((err as Error).message)
+        return null
+      } finally {
+        setIsSaving(false)
+      }
+    },
+    [projectId, buildPayload, loadProject],
+  )
 
   const loadProjectById = useCallback(
     async (id: string): Promise<Project | null> => {

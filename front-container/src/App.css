@@ -258,6 +258,33 @@
   gap: var(--space-2);
 }
 
+.workflow-rename {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+  max-width: 1220px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.workflow-rename .ui-field {
+  flex: 1 1 280px;
+  max-width: 460px;
+}
+
+.workflow-rename__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.workflow-rename .field-error {
+  flex-basis: 100%;
+}
+
 /* ---- Three-step breadcrumb / workflow navigation ---- */
 .workflow-steps {
   max-width: 1220px;

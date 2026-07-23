@@ -59,6 +59,9 @@ export function EditorPage() {
   const paletteForm = usePaletteForm(editor.addPalette)
   const { selectProject, clearProject } = useProjectContext()
   const [routeError, setRouteError] = useState<string | null>(null)
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [renameDraft, setRenameDraft] = useState('')
+  const [renameError, setRenameError] = useState<string | null>(null)
   const lastCalculatedSignature = useRef<string | null>(null)
   const calculateRef = useRef<() => Promise<boolean>>(async () => false)
   const handledRouteProjectId = useRef<string | null>(null)
@@ -208,8 +211,8 @@ export function EditorPage() {
     )
   }, [containerTypes, editor.containerValue])
 
-  const saveProject = useCallback(async (): Promise<string | null> => {
-    const saved = await editor.save(effectivePalletId)
+  const saveProject = useCallback(async (projectName?: string): Promise<string | null> => {
+    const saved = await editor.save(effectivePalletId, projectName)
     if (!saved) return null
     await projects.refresh()
     selectProject(saved.id)
@@ -221,6 +224,25 @@ export function EditorPage() {
     if (savedProjectId) {
       navigate(projectStepPath(savedProjectId, currentStep), { replace: true })
     }
+  }
+
+  const handleStartRename = () => {
+    setRenameDraft(editor.name)
+    setRenameError(null)
+    setIsRenaming(true)
+  }
+
+  const handleRename = async () => {
+    const nextName = renameDraft.trim()
+    if (!nextName) {
+      setRenameError('Le nom du projet est requis.')
+      return
+    }
+    const savedProjectId = await saveProject(nextName)
+    if (!savedProjectId) return
+    setIsRenaming(false)
+    setRenameError(null)
+    navigate(projectStepPath(savedProjectId, currentStep), { replace: true })
   }
 
   const handleCreate = () => {
@@ -433,6 +455,11 @@ export function EditorPage() {
             >
               {editor.isSaving ? 'Enregistrement…' : 'Enregistrer'}
             </Button>
+            {!isRenaming ? (
+              <Button variant="ghost" onClick={handleStartRename}>
+                Renommer
+              </Button>
+            ) : null}
             <div
               className={
                 isReadyToCalculate
@@ -448,6 +475,45 @@ export function EditorPage() {
             </div>
           </div>
         </header>
+
+        {isRenaming ? (
+          <section className="workflow-rename" aria-label="Renommer le projet">
+            <Input
+              id="project-rename"
+              label="Nom du projet"
+              value={renameDraft}
+              onChange={(value) => {
+                setRenameDraft(value)
+                setRenameError(null)
+              }}
+              disabled={editor.isSaving}
+            />
+            <div className="workflow-rename__actions">
+              <Button
+                variant="primary"
+                onClick={() => void handleRename()}
+                disabled={editor.isSaving}
+              >
+                {editor.isSaving ? 'Enregistrement…' : 'Valider le nom'}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setIsRenaming(false)
+                  setRenameError(null)
+                }}
+                disabled={editor.isSaving}
+              >
+                Annuler
+              </Button>
+            </div>
+            {renameError ? (
+              <p className="field-error" role="alert">
+                {renameError}
+              </p>
+            ) : null}
+          </section>
+        ) : null}
 
         <WorkflowSteps
           currentStep={currentStep}

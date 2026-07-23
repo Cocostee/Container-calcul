@@ -113,6 +113,8 @@ export function Scene({ container, placements, pallets }: SceneProps) {
     : selected
       ? [selected]
       : []
+  const palletsWithVisibleVolumes =
+    palletsToInspect.length > 0 ? palletsToInspect : displayedPallets
   const totalPackageCount = displayedPallets.reduce(
     (total, { pallet }) => total + pallet.package_count,
     0,
@@ -285,7 +287,7 @@ export function Scene({ container, placements, pallets }: SceneProps) {
             />
           )
         })}
-        {palletsToInspect.map((displayed) => {
+        {palletsWithVisibleVolumes.map((displayed) => {
           const { pallet, placement } = displayed
           const palletPosition = displayPosition(displayed)
           return (
