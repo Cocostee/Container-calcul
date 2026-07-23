@@ -84,7 +84,7 @@ export function ResultsPanel({
                   (total, pallet) => total + pallet.package_count,
                   0,
                 )}{' '}
-                colis répartis à l&apos;étape 1
+                colis répartis à l&apos;étape 2
               </p>
             </div>
           </div>

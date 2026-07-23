@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { ConfigurationSummary } from '../components/ConfigurationSummary'
 import { PaletteTable } from '../components/PaletteTable'
@@ -54,6 +54,8 @@ export function EditorPage() {
   const { activeProjectId, selectProject, clearProject } = useProjectContext()
   const [screen, setScreen] = useState<Screen>('projects')
   const [currentStep, setCurrentStep] = useState<WorkflowStepNumber>(1)
+  const lastCalculatedSignature = useRef<string | null>(null)
+  const calculateRef = useRef<() => Promise<boolean>>(async () => false)
 
   const { loadProjectById } = editor
   const { setResult } = optimization
@@ -102,6 +104,33 @@ export function EditorPage() {
   const isConfigured = Boolean(sceneContainer) && Boolean(selectedPallet)
   const isReadyToCalculate = isConfigured && packageCount > 0
   const generatedPalletCount = optimization.result?.pallets.length ?? 0
+  const optimizationSignature = useMemo(
+    () =>
+      JSON.stringify({
+        container: editor.containerValue,
+        customDimensions:
+          editor.containerValue === CUSTOM_CONTAINER_VALUE
+            ? editor.customDims
+            : null,
+        pallet: effectivePalletId,
+        packages: editor.palettes.map((item) => ({
+          label: item.label,
+          length: item.length_cm,
+          width: item.width_cm,
+          height: item.height_cm,
+          weight: item.weight_kg,
+          quantity: item.quantity,
+          stackable: item.stackable,
+          rotatable: item.rotatable,
+        })),
+      }),
+    [
+      editor.containerValue,
+      editor.customDims,
+      editor.palettes,
+      effectivePalletId,
+    ],
+  )
   const containerName = useMemo(() => {
     if (editor.containerValue === CUSTOM_CONTAINER_VALUE) {
       return 'Conteneur personnalisé'
@@ -112,13 +141,13 @@ export function EditorPage() {
     )
   }, [containerTypes, editor.containerValue])
 
-  const saveProject = async (): Promise<string | null> => {
+  const saveProject = useCallback(async (): Promise<string | null> => {
     const saved = await editor.save(effectivePalletId)
     if (!saved) return null
     await projects.refresh()
     selectProject(saved.id)
     return saved.id
-  }
+  }, [editor, effectivePalletId, projects, selectProject])
 
   const handleSave = async () => {
     await saveProject()
@@ -152,13 +181,41 @@ export function EditorPage() {
     }
   }
 
-  const handleCalculate = async (): Promise<boolean> => {
+  const handleCalculate = useCallback(async (): Promise<boolean> => {
     const request = editor.buildOptimizeRequest(containerTypes, selectedPallet)
     if (!request) return false
+    lastCalculatedSignature.current = optimizationSignature
+    optimization.setResult(null)
     const projectId = await saveProject()
     if (!projectId) return false
     return Boolean(await optimization.run(projectId, request))
-  }
+  }, [
+    containerTypes,
+    editor,
+    optimization,
+    optimizationSignature,
+    saveProject,
+    selectedPallet,
+  ])
+
+  // Keep the displayed pallets in sync with edits made at step 2. A short
+  // debounce avoids sending a request for every keystroke in a numeric field.
+  useEffect(() => {
+    calculateRef.current = handleCalculate
+  }, [handleCalculate])
+
+  useEffect(() => {
+    if (currentStep !== 2 || !isReadyToCalculate) return
+    if (lastCalculatedSignature.current === optimizationSignature) return
+
+    setResult(null)
+    const timer = window.setTimeout(() => {
+      lastCalculatedSignature.current = optimizationSignature
+      void calculateRef.current()
+    }, 350)
+
+    return () => window.clearTimeout(timer)
+  }, [currentStep, isReadyToCalculate, optimizationSignature, setResult])
 
   const handleStepChange = (step: WorkflowStepNumber) => {
     if (step === 3 && !optimization.result) return
@@ -396,7 +453,11 @@ export function EditorPage() {
                 </span>
               </div>
               <div className="palletization-viewport">
-                {optimization.result?.pallets.length ? (
+                {optimization.isOptimizing ? (
+                  <p className="muted" role="status">
+                    Mise à jour automatique de la répartition…
+                  </p>
+                ) : optimization.result?.pallets.length ? (
                   <PalletizationScene pallets={optimization.result.pallets} />
                 ) : (
                   <p className="muted">
@@ -410,7 +471,7 @@ export function EditorPage() {
         ) : null}
 
         {currentStep === 3 ? (
-          <div className="workspace-overview">
+          <section className="final-placement" aria-labelledby="scene-title">
             <section className="scene-panel" aria-labelledby="scene-title">
               <div className="panel-heading">
                 <div>
@@ -425,8 +486,12 @@ export function EditorPage() {
                   {generatedPalletCount > 1 ? 's' : ''}
                 </span>
               </div>
-              <div className="viewport">
-                {sceneContainer ? (
+              <div className="viewport viewport--final">
+                {optimization.isOptimizing ? (
+                  <p className="muted" role="status">
+                    Mise à jour de l&apos;implantation finale…
+                  </p>
+                ) : sceneContainer ? (
                   <Scene
                     container={sceneContainer}
                     placements={optimization.result?.placements ?? []}
@@ -446,7 +511,7 @@ export function EditorPage() {
               error={optimization.error}
               onRecalculate={() => void handleCalculate()}
             />
-          </div>
+          </section>
         ) : null}
 
         <footer className="step-navigation" aria-label="Navigation entre les étapes">

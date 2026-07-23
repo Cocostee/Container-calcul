@@ -257,6 +257,7 @@
 .workflow-steps ol {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
   min-width: 610px;
   padding: 0;
   margin: 0;
@@ -269,13 +270,7 @@
 }
 
 .workflow-step:not(:last-child)::after {
-  position: absolute;
-  top: 27px;
-  right: 0;
-  left: calc(50% + 30px);
-  height: 1px;
-  content: '';
-  background: var(--color-border);
+  display: none;
 }
 
 .workflow-step button {
@@ -292,7 +287,7 @@
   text-align: left;
   cursor: pointer;
   background: transparent;
-  border: 0;
+  border: 1px solid transparent;
   text-decoration: none;
   border-radius: 12px;
 }
@@ -340,6 +335,8 @@
 
 .workflow-step--current button {
   background: var(--color-primary-soft);
+  border-color: #9ccfc9;
+  box-shadow: 0 1px 4px rgba(0, 84, 82, 0.08);
 }
 
 .workflow-step--current .workflow-step__number,
@@ -419,6 +416,13 @@
   max-width: 1220px;
 }
 
+.final-placement {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 1220px;
+}
+
 .scene-panel,
 .palettes-panel,
 .palletization-panel,
@@ -481,6 +485,11 @@
   padding: var(--space-4);
   color: #e5f3f1;
   text-align: center;
+}
+
+/* The final container deserves the same decision-making space as step 2. */
+.viewport--final {
+  height: clamp(310px, 38vh, 430px);
 }
 
 .palettes-panel {
