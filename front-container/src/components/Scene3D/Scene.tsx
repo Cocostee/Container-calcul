@@ -12,9 +12,12 @@ import { Button } from '../ui/Button/Button'
 import { ContainerMesh } from './ContainerMesh'
 import { PackageMesh } from './PackageMesh'
 import { PaletteMesh } from './PaletteMesh'
+import { PalletVolumeMesh } from './PalletVolumeMesh'
 
 // cm -> scene units (metres).
 const SCALE = 0.01
+const ALL_PALLETS_VALUE = '__all-pallets__'
+const VOLUME_COLOR = '#f5c451'
 
 type ViewPreset = 'iso' | 'top' | 'face'
 type DisplayMode = 'container' | 'exploded'
@@ -104,6 +107,16 @@ export function Scene({ container, placements, pallets }: SceneProps) {
   const selected = displayedPallets.find(
     ({ pallet }) => pallet.id === selectedPalletId,
   )
+  const isAllPalletsView = selectedPalletId === ALL_PALLETS_VALUE
+  const palletsToInspect = isAllPalletsView
+    ? displayedPallets
+    : selected
+      ? [selected]
+      : []
+  const totalPackageCount = displayedPallets.reduce(
+    (total, { pallet }) => total + pallet.package_count,
+    0,
+  )
 
   const length = container.length_cm * SCALE
   const width = container.width_cm * SCALE
@@ -187,9 +200,18 @@ export function Scene({ container, placements, pallets }: SceneProps) {
           <span>Explorer une palette</span>
           <select
             value={selectedPalletId}
-            onChange={(event) => setSelectedPalletId(event.target.value)}
+            onChange={(event) => {
+              const nextPalletId = event.target.value
+              setSelectedPalletId(nextPalletId)
+              if (nextPalletId === ALL_PALLETS_VALUE) {
+                setDisplayMode('exploded')
+              }
+            }}
           >
             <option value="">Choisir une palette</option>
+            <option value={ALL_PALLETS_VALUE}>
+              Toutes les palettes remplies · {totalPackageCount} colis
+            </option>
             {displayedPallets.map(({ pallet }) => (
               <option key={pallet.id} value={pallet.id}>
                 {pallet.label} · {pallet.package_count} colis
@@ -198,22 +220,32 @@ export function Scene({ container, placements, pallets }: SceneProps) {
           </select>
         </label>
       ) : null}
-      {selected ? (
+      {selected || isAllPalletsView ? (
         <div className="scene3d__selection" role="status">
-          <strong>{selected.pallet.label}</strong>
-          <span>
-            {selected.pallet.package_count} colis ·{' '}
-            {Math.round(selected.pallet.fill_rate_volume * 100)} % rempli
-          </span>
+          <strong>
+            {isAllPalletsView ? 'Toutes les palettes remplies' : selected?.pallet.label}
+          </strong>
+          {isAllPalletsView ? (
+            <span>
+              {displayedPallets.length} palettes · {totalPackageCount} colis ·
+              volumes visibles
+            </span>
+          ) : (
+            <span>
+              {selected?.pallet.package_count} colis ·{' '}
+              {Math.round((selected?.pallet.fill_rate_volume ?? 0) * 100)} % rempli
+            </span>
+          )}
           <Button variant="ghost" onClick={() => setSelectedPalletId('')}>
-            Fermer le détail
+            Fermer la vue
           </Button>
         </div>
       ) : null}
       <p className="scene3d__hint">
-        Cliquez sur une palette pour révéler les colis et leur empilement. La
-        vue éclatée les sépare pour une inspection plus rapide. Les flèches et
-        la traverse colorée indiquent le sens de la palette.
+        Sélectionnez « Toutes les palettes remplies » pour comparer tous les
+        colis et leurs volumes transparents : la vue éclatée s&apos;active pour
+        faciliter l&apos;inspection. Les flèches et la traverse colorée indiquent
+        le sens de la palette.
       </p>
       <Canvas
         aria-label="Vue 3D du conteneur, des palettes générées et des colis"
@@ -253,34 +285,52 @@ export function Scene({ container, placements, pallets }: SceneProps) {
             />
           )
         })}
-        {selected
-          ? selected.pallet.packages.map((packagePlacement) => {
-              const palletPosition = displayPosition(selected)
-              const palletBottom =
-                palletPosition[1] - (selected.pallet.height * SCALE) / 2
-              return (
-                <PackageMesh
-                  key={packagePlacement.package_id}
-                  position={[
-                    palletPosition[0] - (selected.pallet.length * SCALE) / 2 +
-                      (packagePlacement.x + packagePlacement.length / 2) * SCALE,
-                    palletBottom +
-                      selected.pallet.base_height * SCALE +
-                      (packagePlacement.z + packagePlacement.height / 2) * SCALE,
-                    palletPosition[2] - (selected.pallet.width * SCALE) / 2 +
-                      (packagePlacement.y + packagePlacement.width / 2) * SCALE,
-                  ]}
-                  size={[
-                    packagePlacement.length * SCALE,
-                    packagePlacement.height * SCALE,
-                    packagePlacement.width * SCALE,
-                  ]}
-                  color={colorByPaletteType(packagePlacement.package_id)}
-                  label={packagePlacement.package_id}
-                />
-              )
-            })
-          : null}
+        {palletsToInspect.map((displayed) => {
+          const { pallet, placement } = displayed
+          const palletPosition = displayPosition(displayed)
+          return (
+            <PalletVolumeMesh
+              key={`volume-${pallet.id}`}
+              position={palletPosition}
+              size={[
+                placement.length * SCALE,
+                placement.height * SCALE,
+                placement.width * SCALE,
+              ]}
+              color={VOLUME_COLOR}
+              onSelect={() => setSelectedPalletId(pallet.id)}
+            />
+          )
+        })}
+        {palletsToInspect.flatMap((displayed) => {
+          const { pallet } = displayed
+          const palletPosition = displayPosition(displayed)
+          const palletBottom =
+            palletPosition[1] - (pallet.height * SCALE) / 2
+          return pallet.packages.map((packagePlacement) => {
+            return (
+              <PackageMesh
+                key={`${pallet.id}-${packagePlacement.package_id}`}
+                position={[
+                  palletPosition[0] - (pallet.length * SCALE) / 2 +
+                    (packagePlacement.x + packagePlacement.length / 2) * SCALE,
+                  palletBottom +
+                    pallet.base_height * SCALE +
+                    (packagePlacement.z + packagePlacement.height / 2) * SCALE,
+                  palletPosition[2] - (pallet.width * SCALE) / 2 +
+                    (packagePlacement.y + packagePlacement.width / 2) * SCALE,
+                ]}
+                size={[
+                  packagePlacement.length * SCALE,
+                  packagePlacement.height * SCALE,
+                  packagePlacement.width * SCALE,
+                ]}
+                color={colorByPaletteType(packagePlacement.package_id)}
+                label={packagePlacement.package_id}
+              />
+            )
+          })
+        })}
       </Canvas>
     </div>
   )
