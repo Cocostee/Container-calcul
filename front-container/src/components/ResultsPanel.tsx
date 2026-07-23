@@ -28,6 +28,11 @@ function FillBar({ label, rate }: FillBarProps) {
         <div
           className="fill-bar__value"
           style={{ width: `${clamped * 100}%` }}
+          role="progressbar"
+          aria-label={label}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(clamped * 100)}
         />
       </div>
     </div>
@@ -41,9 +46,12 @@ export function ResultsPanel({
   onRecalculate,
 }: ResultsPanelProps) {
   return (
-    <section className="results-panel">
+    <section className="results-panel" aria-labelledby="results-title">
       <div className="results-panel__header">
-        <h2>Résultats</h2>
+        <div>
+          <p className="panel-heading__eyebrow">Suivi</p>
+          <h2 id="results-title">Résultats</h2>
+        </div>
         <Button
           variant="primary"
           onClick={onRecalculate}
@@ -53,7 +61,11 @@ export function ResultsPanel({
         </Button>
       </div>
 
-      {error ? <p className="field-error">{error}</p> : null}
+      {error ? (
+        <p className="field-error" role="alert">
+          {error}
+        </p>
+      ) : null}
       {isOptimizing ? <Spinner label="Optimisation en cours…" /> : null}
 
       {result ? (

@@ -17,7 +17,7 @@ export function ProjectList({
   onNew,
 }: ProjectListProps) {
   return (
-    <section className="sidebar-section">
+    <section className="sidebar-section sidebar-section--projects">
       <div className="sidebar-section__header">
         <h2>Projets</h2>
         <Button variant="primary" onClick={onNew}>
@@ -25,7 +25,9 @@ export function ProjectList({
         </Button>
       </div>
       {projects.length === 0 ? (
-        <p className="muted">Aucun projet sauvegardé.</p>
+        <p className="muted" role="status">
+          Aucun projet sauvegardé.
+        </p>
       ) : (
         <ul className="project-list">
           {projects.map((project) => (
@@ -40,6 +42,7 @@ export function ProjectList({
               <Button
                 variant="ghost"
                 className="project-list__select"
+                aria-pressed={project.id === activeId}
                 onClick={() => onSelect(project.id)}
               >
                 <span className="project-list__name">{project.name}</span>
@@ -47,8 +50,13 @@ export function ProjectList({
                   {new Date(project.updated_at).toLocaleDateString()}
                 </span>
               </Button>
-              <Button variant="ghost" onClick={() => onDelete(project.id)}>
-                ✕
+              <Button
+                variant="ghost"
+                className="project-list__delete"
+                aria-label={`Supprimer le projet ${project.name}`}
+                onClick={() => onDelete(project.id)}
+              >
+                <span aria-hidden="true">×</span>
               </Button>
             </li>
           ))}

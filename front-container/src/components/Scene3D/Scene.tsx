@@ -67,18 +67,26 @@ export function Scene({ container, placements, paletteLookup }: SceneProps) {
 
   return (
     <div className="scene3d">
-      <div className="scene3d__views">
+      <div className="scene3d__views" role="group" aria-label="Angle de vue">
         {(Object.keys(VIEW_LABELS) as ViewPreset[]).map((preset) => (
           <Button
             key={preset}
             variant={view === preset ? 'primary' : 'ghost'}
+            aria-pressed={view === preset}
             onClick={() => setView(preset)}
           >
             {VIEW_LABELS[preset]}
           </Button>
         ))}
       </div>
-      <Canvas camera={{ position: [distance, distance, distance], fov: 45 }}>
+      <p className="scene3d__hint">
+        Faites glisser pour tourner la vue. Survolez une palette pour afficher
+        ses détails.
+      </p>
+      <Canvas
+        aria-label="Vue 3D du conteneur et de ses palettes placées"
+        camera={{ position: [distance, distance, distance], fov: 45 }}
+      >
         <ambientLight intensity={0.75} />
         <directionalLight position={[10, 20, 10]} intensity={0.6} />
         <CameraRig view={view} distance={distance} target={target} />

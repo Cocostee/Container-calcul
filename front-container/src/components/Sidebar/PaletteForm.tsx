@@ -47,64 +47,76 @@ export function PaletteForm({
   return (
     <section className="sidebar-section">
       <h2>Ajouter une palette</h2>
-      <Select
-        label="Type de palette"
-        value={values.palette_type_id ?? CUSTOM_PALETTE_VALUE}
-        options={options}
-        onChange={onTypeChange}
-      />
-      <Input
-        label="Label"
-        value={values.label}
-        onChange={(v) => setField('label', v)}
-      />
-      {errors.label ? <p className="field-error">{errors.label}</p> : null}
-      <div className="field-grid">
-        <NumberInput
-          label="Longueur"
-          unit="cm"
-          value={values.length_cm}
-          onChange={(v) => setField('length_cm', v)}
+      <form
+        className="palette-form"
+        onSubmit={(event) => {
+          event.preventDefault()
+          submit()
+        }}
+      >
+        <Select
+          label="Type de palette"
+          value={values.palette_type_id ?? CUSTOM_PALETTE_VALUE}
+          options={options}
+          onChange={onTypeChange}
         />
-        <NumberInput
-          label="Largeur"
-          unit="cm"
-          value={values.width_cm}
-          onChange={(v) => setField('width_cm', v)}
+        <Input
+          label="Label"
+          value={values.label}
+          onChange={(v) => setField('label', v)}
         />
-        <NumberInput
-          label="Hauteur charge"
-          unit="cm"
-          value={values.height_cm}
-          onChange={(v) => setField('height_cm', v)}
-        />
-        <NumberInput
-          label="Poids"
-          unit="kg"
-          value={values.weight_kg}
-          onChange={(v) => setField('weight_kg', v)}
-        />
-        <NumberInput
-          label="Quantité"
-          value={values.quantity}
-          onChange={(v) => setField('quantity', v)}
-        />
-      </div>
-      <div className="checkbox-row">
-        <Checkbox
-          label="Empilable"
-          checked={values.stackable}
-          onChange={(v) => setField('stackable', v)}
-        />
-        <Checkbox
-          label="Rotation autorisée"
-          checked={values.rotatable}
-          onChange={(v) => setField('rotatable', v)}
-        />
-      </div>
-      <Button variant="secondary" onClick={submit}>
-        Ajouter au projet
-      </Button>
+        {errors.label ? (
+          <p className="field-error" role="alert">
+            {errors.label}
+          </p>
+        ) : null}
+        <div className="field-grid">
+          <NumberInput
+            label="Longueur"
+            unit="cm"
+            value={values.length_cm}
+            onChange={(v) => setField('length_cm', v)}
+          />
+          <NumberInput
+            label="Largeur"
+            unit="cm"
+            value={values.width_cm}
+            onChange={(v) => setField('width_cm', v)}
+          />
+          <NumberInput
+            label="Hauteur charge"
+            unit="cm"
+            value={values.height_cm}
+            onChange={(v) => setField('height_cm', v)}
+          />
+          <NumberInput
+            label="Poids"
+            unit="kg"
+            value={values.weight_kg}
+            onChange={(v) => setField('weight_kg', v)}
+          />
+          <NumberInput
+            label="Quantité"
+            value={values.quantity}
+            onChange={(v) => setField('quantity', v)}
+          />
+        </div>
+        <div className="checkbox-row">
+          <Checkbox
+            label="Empilable"
+            checked={values.stackable}
+            onChange={(v) => setField('stackable', v)}
+          />
+          <Checkbox
+            label="Rotation autorisée"
+            checked={values.rotatable}
+            onChange={(v) => setField('rotatable', v)}
+          />
+        </div>
+        <Button variant="secondary" type="submit">
+          Ajouter au projet
+        </Button>
+      </form>
     </section>
   )
 }

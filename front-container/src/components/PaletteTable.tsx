@@ -39,7 +39,7 @@ export function PaletteTable({
 
   return (
     <div className="palette-table">
-      <Table headers={HEADERS}>
+      <Table caption="Palettes à charger" headers={HEADERS}>
         {palettes.map((palette) => (
           <tr key={palette.clientId}>
             <td>
@@ -86,14 +86,16 @@ export function PaletteTable({
             </td>
             <td>
               <Checkbox
-                label=""
+                label="Empilable"
+                className="table-checkbox"
                 checked={palette.stackable}
                 onChange={(v) => onUpdate(palette.clientId, { stackable: v })}
               />
             </td>
             <td>
               <Checkbox
-                label=""
+                label="Rotation autorisée"
+                className="table-checkbox"
                 checked={palette.rotatable}
                 onChange={(v) => onUpdate(palette.clientId, { rotatable: v })}
               />
@@ -102,15 +104,17 @@ export function PaletteTable({
               <div className="row-actions">
                 <Button
                   variant="ghost"
+                  aria-label={`Dupliquer la palette ${palette.label}`}
                   onClick={() => onDuplicate(palette.clientId)}
                 >
                   Dupliquer
                 </Button>
                 <Button
                   variant="danger"
+                  aria-label={`Supprimer la palette ${palette.label}`}
                   onClick={() => onRemove(palette.clientId)}
                 >
-                  Suppr.
+                  Supprimer
                 </Button>
               </div>
             </td>

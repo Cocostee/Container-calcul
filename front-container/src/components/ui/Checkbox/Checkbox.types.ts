@@ -4,4 +4,5 @@ export interface CheckboxProps {
   onChange: (checked: boolean) => void
   disabled?: boolean
   id?: string
+  className?: string
 }

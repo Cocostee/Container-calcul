@@ -37,6 +37,8 @@ export function EditorPage() {
   }, [activeProjectId, editor.projectId, loadProjectById, setResult])
 
   const sceneContainer = editor.resolveContainer(containerTypes)
+  const paletteCount = editor.palettes.length
+  const isReadyToCalculate = Boolean(sceneContainer) && paletteCount > 0
 
   const paletteLookup = useMemo(
     () =>
@@ -79,7 +81,22 @@ export function EditorPage() {
 
   return (
     <div className="editor">
-      <aside className="sidebar">
+      <aside className="sidebar" aria-label="Préparation du projet">
+        <div className="sidebar__brand">
+          <span className="sidebar__mark" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
+          <div>
+            <p className="sidebar__eyebrow">Logistique</p>
+            <p className="sidebar__title">Plan de chargement</p>
+          </div>
+        </div>
+        <p className="sidebar__intro">
+          Configurez le conteneur et les palettes avant de calculer la meilleure
+          répartition.
+        </p>
         <ProjectList
           projects={projects.projects}
           activeId={editor.projectId}
@@ -105,8 +122,33 @@ export function EditorPage() {
       </aside>
 
       <main className="workspace">
-        <header className="topbar">
+        <header className="workspace-header">
+          <div>
+            <p className="workspace-header__eyebrow">Optimisation</p>
+            <h1>Préparer un chargement</h1>
+            <p className="workspace-header__description">
+              Organisez vos palettes, visualisez le conteneur et lancez le
+              calcul lorsque le projet est prêt.
+            </p>
+          </div>
+          <div
+            className={
+              isReadyToCalculate
+                ? 'project-status project-status--ready'
+                : 'project-status'
+            }
+            aria-live="polite"
+          >
+            <span className="project-status__dot" aria-hidden="true" />
+            {isReadyToCalculate
+              ? `Prêt · ${paletteCount} palette${paletteCount > 1 ? 's' : ''}`
+              : 'À compléter'}
+          </div>
+        </header>
+
+        <section className="project-bar" aria-label="Actions du projet">
           <Input
+            id="project-name"
             label="Nom du projet"
             value={editor.name}
             onChange={editor.setName}
@@ -127,26 +169,60 @@ export function EditorPage() {
               {editor.isSaving ? 'Enregistrement…' : 'Enregistrer'}
             </Button>
           </div>
-        </header>
+        </section>
 
         {editor.saveError ? (
-          <p className="field-error">{editor.saveError}</p>
+          <p className="field-error" role="alert">
+            {editor.saveError}
+          </p>
         ) : null}
 
-        <div className="viewport">
-          {sceneContainer ? (
-            <Scene
-              container={sceneContainer}
-              placements={optimization.result?.placements ?? []}
-              paletteLookup={paletteLookup}
-            />
-          ) : (
-            <p className="muted">Sélectionnez un conteneur pour la vue 3D.</p>
-          )}
+        <div className="workspace-overview">
+          <section className="scene-panel" aria-labelledby="scene-title">
+            <div className="panel-heading">
+              <div>
+                <p className="panel-heading__eyebrow">Visualisation</p>
+                <h2 id="scene-title">Vue du conteneur</h2>
+              </div>
+              <span className="panel-heading__meta">
+                {optimization.result?.placements.length ?? 0} palette
+                {(optimization.result?.placements.length ?? 0) > 1 ? 's' : ''}{' '}
+                placée{(optimization.result?.placements.length ?? 0) > 1 ? 's' : ''}
+              </span>
+            </div>
+            <div className="viewport">
+              {sceneContainer ? (
+                <Scene
+                  container={sceneContainer}
+                  placements={optimization.result?.placements ?? []}
+                  paletteLookup={paletteLookup}
+                />
+              ) : (
+                <p className="muted">
+                  Sélectionnez un conteneur pour activer la vue 3D.
+                </p>
+              )}
+            </div>
+          </section>
+
+          <ResultsPanel
+            result={optimization.result}
+            isOptimizing={optimization.isOptimizing}
+            error={optimization.error}
+            onRecalculate={handleCalculate}
+          />
         </div>
 
         <section className="palettes-panel">
-          <h2>Palettes du projet</h2>
+          <div className="panel-heading">
+            <div>
+              <p className="panel-heading__eyebrow">Inventaire</p>
+              <h2>Palettes du projet</h2>
+            </div>
+            <span className="panel-heading__meta">
+              {paletteCount} ligne{paletteCount > 1 ? 's' : ''}
+            </span>
+          </div>
           <PaletteTable
             palettes={editor.palettes}
             onUpdate={editor.updatePalette}
@@ -154,13 +230,6 @@ export function EditorPage() {
             onRemove={editor.removePalette}
           />
         </section>
-
-        <ResultsPanel
-          result={optimization.result}
-          isOptimizing={optimization.isOptimizing}
-          error={optimization.error}
-          onRecalculate={handleCalculate}
-        />
       </main>
     </div>
   )

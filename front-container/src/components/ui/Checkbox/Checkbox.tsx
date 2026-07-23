@@ -8,12 +8,13 @@ export function Checkbox({
   onChange,
   disabled,
   id,
+  className = '',
 }: CheckboxProps) {
   const generatedId = useId()
   const checkboxId = id ?? generatedId
 
   return (
-    <label className="ui-checkbox" htmlFor={checkboxId}>
+    <label className={`ui-checkbox ${className}`.trim()} htmlFor={checkboxId}>
       <input
         id={checkboxId}
         type="checkbox"
