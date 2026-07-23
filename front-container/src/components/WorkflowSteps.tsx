@@ -1,13 +1,16 @@
+export type WorkflowStepNumber = 1 | 2 | 3
+
 interface WorkflowStepsProps {
+  currentStep: WorkflowStepNumber
   hasConfiguration: boolean
   packageCount: number
   palletCount: number
   hasResult: boolean
+  onStepChange: (step: WorkflowStepNumber) => void
 }
 
 interface WorkflowStep {
-  id: number
-  href: string
+  id: WorkflowStepNumber
   title: string
   detail: string
   complete: boolean
@@ -15,30 +18,28 @@ interface WorkflowStep {
 
 /** A concise, keyboard-accessible overview of the loading workflow. */
 export function WorkflowSteps({
+  currentStep,
   hasConfiguration,
   packageCount,
   palletCount,
   hasResult,
+  onStepChange,
 }: WorkflowStepsProps) {
-  const currentStep = hasResult ? 3 : packageCount > 0 ? 2 : 1
   const steps: WorkflowStep[] = [
     {
       id: 1,
-      href: '#step-1',
       title: 'Configurer',
       detail: 'Conteneur et palette',
-      complete: hasConfiguration && packageCount > 0,
+      complete: hasConfiguration,
     },
     {
       id: 2,
-      href: '#step-2',
       title: 'Charger les palettes',
       detail: packageCount > 0 ? `${packageCount} colis` : 'Ajouter les colis',
       complete: hasResult && palletCount > 0,
     },
     {
       id: 3,
-      href: '#step-3',
       title: 'Placer dans le conteneur',
       detail: hasResult
         ? `${palletCount} palette${palletCount > 1 ? 's' : ''}`
@@ -59,7 +60,12 @@ export function WorkflowSteps({
                 step.complete ? ' workflow-step--complete' : ''
               }`}
             >
-              <a href={step.href} aria-current={isCurrent ? 'step' : undefined}>
+              <button
+                type="button"
+                aria-current={isCurrent ? 'step' : undefined}
+                disabled={step.id === 3 && !hasResult}
+                onClick={() => onStepChange(step.id)}
+              >
                 <span className="workflow-step__number" aria-hidden="true">
                   {step.complete ? '✓' : step.id}
                 </span>
@@ -69,7 +75,7 @@ export function WorkflowSteps({
                   </strong>
                   <small>{step.detail}</small>
                 </span>
-              </a>
+              </button>
             </li>
           )
         })}

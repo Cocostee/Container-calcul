@@ -7,6 +7,109 @@
     var(--color-bg);
 }
 
+/* ---- Project home: this is intentionally a full page with no sidebar ---- */
+.project-home {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: min(100% - 40px, 1040px);
+  min-height: 100dvh;
+  padding: clamp(32px, 6vw, 76px) 0;
+  margin: 0 auto;
+}
+
+.project-home__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+.project-home__brand {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.project-home__brand .sidebar__mark {
+  flex: 0 0 auto;
+  margin-top: 4px;
+}
+
+.project-home__brand p:last-child {
+  max-width: 590px;
+  margin-top: var(--space-2);
+  color: var(--color-muted);
+}
+
+.project-home__content {
+  padding: clamp(20px, 4vw, 36px);
+  background: rgba(255, 255, 255, 0.91);
+  border: 1px solid rgba(120, 120, 108, 0.25);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.project-home__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+  gap: var(--space-3);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.project-card {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.project-card__open {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-height: 142px;
+  padding: var(--space-4);
+  text-align: left;
+}
+
+.project-card__name {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 780;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-card__action {
+  margin-top: auto;
+  color: var(--color-primary-hover);
+  font-size: 0.84rem;
+  font-weight: 750;
+}
+
+.project-home__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: 560px;
+  padding: var(--space-6) 0 var(--space-2);
+}
+
+.project-home__empty p {
+  color: var(--color-muted);
+}
+
 /* ---- Sidebar: preparation remains visible without overwhelming the page ---- */
 .sidebar {
   display: flex;
@@ -71,6 +174,14 @@
   font-size: 0.875rem;
 }
 
+.sidebar__back {
+  align-self: flex-start;
+  min-height: 36px;
+  padding: 5px var(--space-2);
+  color: var(--color-primary-hover);
+  font-size: 0.84rem;
+}
+
 .sidebar-section {
   display: flex;
   flex-direction: column;
@@ -123,6 +234,15 @@
   color: var(--color-muted);
 }
 
+.workflow-header__actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
 /* ---- Three-step breadcrumb / workflow navigation ---- */
 .workflow-steps {
   max-width: 1220px;
@@ -158,21 +278,26 @@
   background: var(--color-border);
 }
 
-.workflow-step a {
+.workflow-step button {
   position: relative;
   z-index: 1;
   display: grid;
+  width: 100%;
   grid-template-columns: 42px minmax(0, 1fr);
   align-items: center;
   gap: var(--space-2);
   min-height: 58px;
   padding: 8px 10px;
   color: var(--color-muted);
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
   text-decoration: none;
   border-radius: 12px;
 }
 
-.workflow-step a:hover {
+.workflow-step button:hover:not(:disabled) {
   color: var(--color-primary);
   background: var(--color-primary-soft);
 }
@@ -199,8 +324,12 @@
 }
 
 .workflow-step strong {
+  overflow: visible;
   color: var(--color-text);
   font-size: 0.84rem;
+  line-height: 1.18;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .workflow-step small {
@@ -209,7 +338,7 @@
   font-size: 0.74rem;
 }
 
-.workflow-step--current a {
+.workflow-step--current button {
   background: var(--color-primary-soft);
 }
 
@@ -293,6 +422,7 @@
 .scene-panel,
 .palettes-panel,
 .palletization-panel,
+.configuration-panel,
 .results-panel {
   background: rgba(255, 255, 255, 0.91);
   border: 1px solid rgba(120, 120, 108, 0.25);
@@ -356,6 +486,140 @@
 .palettes-panel {
   max-width: 1220px;
   padding: var(--space-5);
+}
+
+.configuration-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 840px;
+  padding: clamp(20px, 4vw, 36px);
+}
+
+.configuration-panel > .ui-field {
+  width: min(100%, 460px);
+}
+
+.configuration-guide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.configuration-guide article {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.configuration-guide article > span {
+  display: grid;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  background: var(--color-primary);
+  border-radius: 50%;
+}
+
+.configuration-guide h3 {
+  margin: 1px 0 3px;
+  font-size: 0.94rem;
+}
+
+.configuration-guide p {
+  color: var(--color-muted);
+  font-size: 0.84rem;
+}
+
+.configuration-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.configuration-status-grid div {
+  padding: var(--space-3);
+  border-left: 3px solid var(--color-primary);
+  background: var(--color-primary-soft);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.configuration-status-grid span,
+.configuration-status-grid strong {
+  display: block;
+}
+
+.configuration-status-grid span {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.configuration-status-grid strong {
+  margin-top: 2px;
+  color: var(--color-primary-hover);
+  font-size: 0.9rem;
+}
+
+.step-navigation {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  max-width: 1220px;
+  padding: var(--space-4) 0 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.step-navigation > span {
+  min-width: 1px;
+}
+
+.configuration-summary dl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+}
+
+.configuration-summary dl > div {
+  padding: var(--space-3);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.configuration-summary dt {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.configuration-summary dd {
+  margin: 2px 0 0;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 760;
+}
+
+.configuration-summary small {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-muted);
+  font-size: 0.76rem;
+}
+
+.configuration-summary__note {
+  color: var(--color-muted);
+  font-size: 0.79rem;
+  line-height: 1.4;
 }
 
 .palletization-panel {
@@ -743,6 +1007,23 @@
 }
 
 @media (max-width: 760px) {
+  .project-home {
+    width: min(100% - 32px, 1040px);
+    padding: var(--space-5) 0;
+  }
+
+  .project-home__header {
+    flex-direction: column;
+  }
+
+  .project-home__header > .ui-button {
+    width: 100%;
+  }
+
+  .project-home__content {
+    padding: var(--space-4);
+  }
+
   .editor {
     display: block;
   }
@@ -762,6 +1043,11 @@
   .workspace-header,
   .project-bar {
     flex-direction: column;
+  }
+
+  .workflow-header__actions {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .project-status {
@@ -785,6 +1071,15 @@
     padding: var(--space-4);
   }
 
+  .configuration-guide,
+  .configuration-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .step-navigation {
+    align-items: stretch;
+  }
+
   .workflow-steps {
     margin-right: calc(-1 * var(--space-2));
   }
@@ -793,7 +1088,7 @@
     min-width: 0;
   }
 
-  .workflow-step a {
+  .workflow-step button {
     grid-template-columns: 34px minmax(0, 1fr);
     align-items: start;
     gap: 5px;
