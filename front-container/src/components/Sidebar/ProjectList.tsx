@@ -1,4 +1,6 @@
+import { useTranslation } from '../../i18n'
 import type { ProjectSummary } from '../../types/project.types'
+import { Icon } from '../ui/Icon'
 import { Button } from '../ui/Button/Button'
 
 interface ProjectListProps {
@@ -16,17 +18,20 @@ export function ProjectList({
   onDelete,
   onNew,
 }: ProjectListProps) {
+  const { locale, t } = useTranslation()
+  const dateFormat = new Intl.DateTimeFormat(locale, { dateStyle: 'short' })
+
   return (
     <section className="sidebar-section sidebar-section--projects">
       <div className="sidebar-section__header">
-        <h2>Projets</h2>
-        <Button variant="primary" onClick={onNew}>
-          Nouveau
+        <h2>{t('home.railTitle')}</h2>
+        <Button variant="primary" icon="plus-outline" onClick={onNew}>
+          {t('home.railNew')}
         </Button>
       </div>
       {projects.length === 0 ? (
         <p className="muted" role="status">
-          Aucun projet sauvegardé.
+          {t('home.railEmpty')}
         </p>
       ) : (
         <ul className="project-list">
@@ -47,16 +52,16 @@ export function ProjectList({
               >
                 <span className="project-list__name">{project.name}</span>
                 <span className="muted">
-                  {new Date(project.updated_at).toLocaleDateString()}
+                  {dateFormat.format(new Date(project.updated_at))}
                 </span>
               </Button>
               <Button
                 variant="ghost"
                 className="project-list__delete"
-                aria-label={`Supprimer le projet ${project.name}`}
+                aria-label={t('home.deleteProject', { name: project.name })}
                 onClick={() => onDelete(project.id)}
               >
-                <span aria-hidden="true">×</span>
+                <Icon name="trash-outline" size="sm" tone="inherit" />
               </Button>
             </li>
           ))}

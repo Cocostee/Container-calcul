@@ -1,4 +1,4 @@
-// HTTP calls for container reference types.
+// Appels HTTP des tailles de conteneur de référence.
 import type { ContainerType } from '../types/container.types'
 import { apiClient } from './client'
 

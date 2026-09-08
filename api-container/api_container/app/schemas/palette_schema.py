@@ -1,4 +1,4 @@
-"""Contract - palette schemas (reference type + project instances)."""
+"""Contract - palette type and package line schemas."""
 import uuid
 from typing import Optional
 
@@ -22,8 +22,8 @@ class PaletteTypeSchema(BaseModel):
         orm_mode = True
 
 
-class PaletteInstanceBase(BaseModel):
-    """Shared fields of a pallet line inside a project."""
+class PackageLineBase(BaseModel):
+    """Shared fields of a package line inside a project."""
 
     palette_type_id: Optional[str] = None
     label: str
@@ -36,12 +36,12 @@ class PaletteInstanceBase(BaseModel):
     rotatable: bool = True
 
 
-class PaletteInstanceCreate(PaletteInstanceBase):
-    """Payload to create/replace a pallet line."""
+class PackageLineCreate(PackageLineBase):
+    """Payload to create/replace a package line."""
 
 
-class PaletteInstanceSchema(PaletteInstanceBase):
-    """Persisted pallet line returned to the client."""
+class PackageLineSchema(PackageLineBase):
+    """Persisted package line returned to the client."""
 
     id: uuid.UUID
 

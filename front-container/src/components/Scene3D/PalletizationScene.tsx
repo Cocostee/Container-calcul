@@ -2,6 +2,7 @@ import { OrbitControls } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
 
+import { useTranslation } from '../../i18n'
 import type { GeneratedPallet } from '../../types/placement.types'
 import { colorByPaletteType } from '../../utils/colorByPaletteType'
 import { PackageMesh } from './PackageMesh'
@@ -31,10 +32,12 @@ function CameraRig({ distance, target }: CameraRigProps) {
 }
 
 /**
- * Step 2 preview: generated pallets are deliberately separated so every
- * package remains visible before the pallets are placed in the container.
+ * Les palettes montées, écartées les unes des autres à dessein : chaque colis
+ * doit rester visible, ce que le plan de chargement ne permet pas puisqu'il
+ * les serre dans la cale.
  */
 export function PalletizationScene({ pallets }: PalletizationSceneProps) {
+  const { t } = useTranslation()
   const layout = useMemo(() => {
     const maxLength = Math.max(
       ...pallets.map((pallet) => pallet.length * SCALE),
@@ -71,12 +74,10 @@ export function PalletizationScene({ pallets }: PalletizationSceneProps) {
   return (
     <div className="palletization-scene">
       <p className="palletization-scene__hint">
-        Toutes les palettes sont séparées pour contrôler visuellement les colis.
-        Faites glisser la vue pour les inspecter. Les flèches et la traverse
-        colorée indiquent le sens de la palette et l&apos;entrée des fourches.
+        {t('scene.palletizationHint')}
       </p>
       <Canvas
-        aria-label="Vue 3D des palettes générées et de tous leurs colis"
+        aria-label={t('scene.palletizationAriaLabel')}
         camera={{
           position: [layout.distance, layout.distance, layout.distance],
           fov: 45,

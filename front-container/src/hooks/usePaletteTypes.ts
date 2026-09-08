@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { getPaletteTypes } from '../api/paletteTypes.api'
 import type { PaletteType } from '../types/palette.types'
 
-// Fetch and cache the predefined palette types once.
+// Charge les formats de palette une fois pour toutes.
 export function usePaletteTypes() {
   const [paletteTypes, setPaletteTypes] = useState<PaletteType[]>([])
   const [loading, setLoading] = useState(true)

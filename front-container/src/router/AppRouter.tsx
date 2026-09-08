@@ -14,9 +14,9 @@ import { NEW_PROJECT_ID, newProjectStepPath, projectStepPath } from './workflowR
 const VALID_STEPS = new Set(['1', '2', '3'])
 
 /**
- * Route middleware for the three-step workflow.
+ * Filtre des routes du parcours en trois étapes.
  *
- * It keeps invalid URLs out of the editor and prevents a draft project from
+ * Il tient les URL invalides hors de l'éditeur et empêche un projet brouillon de
  * opening a later step before it has been persisted.
  */
 function WorkflowRouteMiddleware() {

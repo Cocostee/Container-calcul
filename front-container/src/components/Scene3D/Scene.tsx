@@ -7,6 +7,8 @@ import type {
   OptimizeContainer,
   Placement,
 } from '../../types/placement.types'
+import { useTranslation } from '../../i18n'
+import type { IconName } from '../ui/Icon'
 import { colorByPaletteType } from '../../utils/colorByPaletteType'
 import { Button } from '../ui/Button/Button'
 import { ContainerMesh } from './ContainerMesh'
@@ -17,7 +19,7 @@ import { PalletVolumeMesh } from './PalletVolumeMesh'
 // cm -> scene units (metres).
 const SCALE = 0.01
 const ALL_PALLETS_VALUE = '__all-pallets__'
-const VOLUME_COLOR = '#f5c451'
+const VOLUME_COLOR = '#f2a63b'
 
 type ViewPreset = 'iso' | 'top' | 'face'
 type DisplayMode = 'container' | 'exploded'
@@ -41,7 +43,7 @@ interface DisplayedPallet {
   index: number
 }
 
-// Reposition the camera when a preset view button is pressed.
+// Replace la caméra quand on choisit un point de vue.
 function CameraRig({ view, distance, target }: CameraRigProps) {
   const { camera } = useThree()
 
@@ -59,15 +61,26 @@ function CameraRig({ view, distance, target }: CameraRigProps) {
   return null
 }
 
-const VIEW_LABELS: Record<ViewPreset, string> = {
-  iso: 'Isométrique',
-  top: 'Dessus',
-  face: 'Face',
+const VIEW_KEYS: Record<ViewPreset, string> = {
+  iso: 'scene.viewIso',
+  top: 'scene.viewTop',
+  face: 'scene.viewFace',
 }
 
-const DISPLAY_LABELS: Record<DisplayMode, string> = {
-  container: 'Conteneur',
-  exploded: 'Vue éclatée',
+const VIEW_ICONS: Record<ViewPreset, IconName> = {
+  iso: 'move-outline',
+  top: 'arrow-down-outline',
+  face: 'columns-outline',
+}
+
+const DISPLAY_KEYS: Record<DisplayMode, string> = {
+  container: 'scene.modeContainer',
+  exploded: 'scene.modeExploded',
+}
+
+const DISPLAY_ICONS: Record<DisplayMode, IconName> = {
+  container: 'container-outline',
+  exploded: 'layers-outline',
 }
 
 function legacyPallets(
@@ -103,9 +116,16 @@ export function Scene({
   pallets,
   fallbackPallets = [],
 }: SceneProps) {
+  const { t } = useTranslation()
   const [view, setView] = useState<ViewPreset>('iso')
+  /*
+   * On arrive sur le chargement complet : toutes les palettes, à leur place
+   * dans la cale. C'est la question qu'on se pose en ouvrant le plan ; isoler
+   * une palette ou l'éclater vient après.
+   */
   const [displayMode, setDisplayMode] = useState<DisplayMode>('container')
-  const [selectedPalletId, setSelectedPalletId] = useState<string>('')
+  const [selectedPalletId, setSelectedPalletId] =
+    useState<string>(ALL_PALLETS_VALUE)
 
   const allPallets = useMemo(
     () =>
@@ -191,54 +211,68 @@ export function Scene({
   return (
     <div className="scene3d">
       <div className="scene3d__toolbar">
-        <div className="scene3d__views" role="group" aria-label="Angle de vue">
-          {(Object.keys(VIEW_LABELS) as ViewPreset[]).map((preset) => (
+        <div
+          className="scene3d__views"
+          role="group"
+          aria-label={t('scene.viewGroup')}
+        >
+          {(Object.keys(VIEW_KEYS) as ViewPreset[]).map((preset) => (
             <Button
               key={preset}
               variant={view === preset ? 'primary' : 'ghost'}
               aria-pressed={view === preset}
+              icon={VIEW_ICONS[preset]}
               onClick={() => setView(preset)}
             >
-              {VIEW_LABELS[preset]}
+              {t(VIEW_KEYS[preset])}
             </Button>
           ))}
         </div>
-        <div className="scene3d__modes" role="group" aria-label="Mode d'affichage">
-          {(Object.keys(DISPLAY_LABELS) as DisplayMode[]).map((mode) => (
+        <div
+          className="scene3d__modes"
+          role="group"
+          aria-label={t('scene.modeGroup')}
+        >
+          {(Object.keys(DISPLAY_KEYS) as DisplayMode[]).map((mode) => (
             <Button
               key={mode}
               variant={displayMode === mode ? 'primary' : 'ghost'}
               aria-pressed={displayMode === mode}
+              icon={DISPLAY_ICONS[mode]}
               onClick={() => setDisplayMode(mode)}
             >
-              {DISPLAY_LABELS[mode]}
+              {t(DISPLAY_KEYS[mode])}
             </Button>
           ))}
         </div>
       </div>
       {displayedPallets.length > 0 ? (
         <label className="scene3d__explore">
-          <span>Explorer une palette</span>
+          <span>{t('scene.explore')}</span>
           <select
             value={selectedPalletId}
-            onChange={(event) => {
-              const nextPalletId = event.target.value
-              setSelectedPalletId(nextPalletId)
-              if (nextPalletId === ALL_PALLETS_VALUE) {
-                setDisplayMode('exploded')
-              }
-            }}
+            /* Le choix de la palette et le mode d'affichage restent
+               indépendants : basculer en vue éclatée d'autorité contredisait
+               la vue par défaut, et surprenait au retour. */
+            onChange={(event) => setSelectedPalletId(event.target.value)}
           >
-            <option value="">Choisir une palette</option>
+            <option value="">{t('scene.choosePallet')}</option>
             <option value={ALL_PALLETS_VALUE}>
               {hasPackageDetails
-                ? `Toutes les palettes remplies · ${totalPackageCount} colis`
-                : `Toutes les palettes importées · ${displayedPallets.length} palettes`}
+                ? t('scene.allPalletsFilledWith', { count: totalPackageCount })
+                : t('scene.allPalletsImported', {
+                    count: displayedPallets.length,
+                  })}
             </option>
             {displayedPallets.map(({ pallet }) => (
               <option key={pallet.id} value={pallet.id}>
-                {pallet.label} ·{' '}
-                {pallet.package_count > 0 ? `${pallet.package_count} colis` : 'palette importée'}
+                {t('scene.palletOption', {
+                  label: pallet.label,
+                  detail:
+                    pallet.package_count > 0
+                      ? t('scene.palletPackages', { count: pallet.package_count })
+                      : t('scene.palletImported'),
+                })}
               </option>
             ))}
           </select>
@@ -247,32 +281,43 @@ export function Scene({
       {selected || isAllPalletsView ? (
         <div className="scene3d__selection" role="status">
           <strong>
-            {isAllPalletsView ? 'Toutes les palettes remplies' : selected?.pallet.label}
+            {isAllPalletsView
+              ? t('scene.allPalletsFilled')
+              : selected?.pallet.label}
           </strong>
           {isAllPalletsView ? (
             <span>
-              {displayedPallets.length} palettes ·{' '}
-              {hasPackageDetails ? `${totalPackageCount} colis · ` : ''}volumes visibles
+              {t('scene.selectionAll', {
+                count: displayedPallets.length,
+                packages: hasPackageDetails
+                  ? `${t('scene.palletPackages', { count: totalPackageCount })} · `
+                  : '',
+              })}
             </span>
           ) : (
             <span>
               {selected?.pallet.package_count
-                ? `${selected.pallet.package_count} colis · ${Math.round((selected.pallet.fill_rate_volume ?? 0) * 100)} % rempli`
-                : 'Palette importée · volume visible'}
+                ? t('scene.selectionPackages', {
+                    count: selected.pallet.package_count,
+                    percent: Math.round(
+                      (selected.pallet.fill_rate_volume ?? 0) * 100,
+                    ),
+                  })
+                : t('scene.importedPalletVolume')}
             </span>
           )}
-          <Button variant="ghost" onClick={() => setSelectedPalletId('')}>
-            Fermer la vue
+          <Button
+            variant="ghost"
+            icon="close"
+            onClick={() => setSelectedPalletId('')}
+          >
+            {t('scene.closeView')}
           </Button>
         </div>
       ) : null}
-      <p className="scene3d__hint">
-        Sélectionnez toutes les palettes pour comparer leurs volumes
-        transparents : la vue éclatée s&apos;active pour faciliter l&apos;inspection.
-        Les flèches et la traverse colorée indiquent le sens de la palette.
-      </p>
+      <p className="scene3d__hint">{t('scene.hint')}</p>
       <Canvas
-        aria-label="Vue 3D du conteneur, des palettes générées et des colis"
+        aria-label={t('scene.ariaLabel')}
         camera={{ position: [distance, distance, distance], fov: 45 }}
       >
         <ambientLight intensity={0.8} />

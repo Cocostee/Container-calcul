@@ -1,4 +1,4 @@
-"""Model - PaletteInstance (a pallet added to a project)."""
+"""Model - PackageLine (one package line of a project)."""
 import uuid
 from typing import Optional
 
@@ -8,10 +8,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from api_container.config.database import Base
 
 
-class PaletteInstance(Base):
-    """A pallet line inside a project (dimensions may override the type)."""
+class PackageLine(Base):
+    """One package line to ship: dimensions, weight and how many.
 
-    __tablename__ = "palette_instances"
+    ``palette_type_id`` stays available for lines that came from an import
+    already palletised, where the source file named a pallet format.
+    """
+
+    __tablename__ = "project_packages"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -29,4 +33,4 @@ class PaletteInstance(Base):
     stackable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     rotatable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
-    project: Mapped["Project"] = relationship(back_populates="palettes")
+    project: Mapped["Project"] = relationship(back_populates="packages")

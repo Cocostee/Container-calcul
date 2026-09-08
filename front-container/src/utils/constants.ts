@@ -1,11 +1,11 @@
-// Shared constants (no magic numbers scattered across the app).
+// Les constantes partagées : aucun nombre magique dispersé dans le code.
 
 export const CUSTOM_CONTAINER_VALUE = 'custom'
 export const CUSTOM_PALETTE_VALUE = 'custom'
 
 export const CM3_PER_M3 = 1_000_000
 
-// Default dimensions used when "custom" container is selected.
+// Les cotes proposées quand on choisit un conteneur personnalisé.
 export const DEFAULT_CONTAINER_CUSTOM_DIMS = {
   length_cm: 600,
   width_cm: 235,
@@ -13,7 +13,7 @@ export const DEFAULT_CONTAINER_CUSTOM_DIMS = {
   max_weight_kg: 26000,
 }
 
-// Default values pre-filling the "add package" form.
+// Les valeurs qui pré-remplissent le formulaire d'ajout de colis.
 export const DEFAULT_PACKAGE_FORM = {
   length_cm: 60,
   width_cm: 40,
@@ -25,13 +25,14 @@ export const DEFAULT_PACKAGE_FORM = {
 }
 
 // Distinct, colour-blind-friendly palette used to colour pallets in 3D.
+// Réglées pour se lire sur le hublot sombre : écartées en teinte et en clarté.
 export const PALETTE_COLORS = [
-  '#2563eb',
-  '#16a34a',
-  '#f59e0b',
-  '#db2777',
-  '#7c3aed',
-  '#0891b2',
-  '#dc2626',
-  '#65a30d',
+  '#61a8f2',
+  '#4ecf9b',
+  '#f08a5d',
+  '#e879c0',
+  '#a78bfa',
+  '#79d5e3',
+  '#f2685c',
+  '#b8d94f',
 ]

@@ -1,5 +1,9 @@
+import { useTranslation } from '../i18n'
 import type { ProjectSummary } from '../types/project.types'
+import { AppControls } from './AppControls'
+import { PanelHeading } from './PanelHeading'
 import { Button } from './ui/Button/Button'
+import { Icon } from './ui/Icon'
 
 interface ProjectHomeProps {
   projects: ProjectSummary[]
@@ -11,7 +15,7 @@ interface ProjectHomeProps {
   onDelete: (id: string) => void
 }
 
-/** Initial page: project management is intentionally separate from the editor. */
+/** Page initiale : gérer ses projets est un autre métier que préparer un plan. */
 export function ProjectHome({
   projects,
   isLoading,
@@ -21,6 +25,9 @@ export function ProjectHome({
   onOpen,
   onDelete,
 }: ProjectHomeProps) {
+  const { locale, t } = useTranslation()
+  const dateFormat = new Intl.DateTimeFormat(locale, { dateStyle: 'medium' })
+
   return (
     <main className="project-home">
       <header className="project-home__header">
@@ -31,21 +38,19 @@ export function ProjectHome({
             <span />
           </span>
           <div>
-            <p className="workspace-header__eyebrow">Logistique</p>
-            <h1>Plans de chargement</h1>
-            <p>
-              Créez un projet ou reprenez un calcul existant pour organiser les
-              colis, les palettes et le conteneur.
-            </p>
+            <p className="workspace-header__eyebrow">{t('home.eyebrow')}</p>
+            <h1>{t('home.title')}</h1>
+            <p>{t('home.intro')}</p>
           </div>
         </div>
         <div className="project-home__actions">
-          <Button variant="secondary" onClick={onImport}>
-            Importer un fichier
+          <Button variant="secondary" icon="file-upload-outline" onClick={onImport}>
+            {t('home.importFile')}
           </Button>
-          <Button variant="primary" onClick={onCreate}>
-            Ajouter un projet
+          <Button variant="primary" icon="plus-outline" onClick={onCreate}>
+            {t('home.addProject')}
           </Button>
+          <AppControls />
         </div>
       </header>
 
@@ -56,29 +61,28 @@ export function ProjectHome({
       ) : null}
 
       <section className="project-home__content" aria-labelledby="projects-title">
-        <div className="panel-heading">
-          <div>
-            <p className="panel-heading__eyebrow">Projets</p>
-            <h2 id="projects-title">Vos projets enregistrés</h2>
-          </div>
-          <span className="panel-heading__meta">
-            {projects.length} projet{projects.length > 1 ? 's' : ''}
-          </span>
-        </div>
+        <PanelHeading
+          icon="folder-open-outline"
+          eyebrow={t('home.panelEyebrow')}
+          title={t('home.panelTitle')}
+          titleId="projects-title"
+          meta={t('home.projectCount', { count: projects.length })}
+        />
 
-        {isLoading ? <p className="muted">Chargement des projets…</p> : null}
+        {isLoading ? <p className="muted">{t('home.loadingProjects')}</p> : null}
         {!isLoading && projects.length === 0 ? (
           <div className="project-home__empty">
-            <h3>Commencez un nouveau plan</h3>
-            <p>
-              Définissez le conteneur, chargez les colis sur les palettes, puis
-              contrôlez leur placement final.
-            </p>
-            <Button variant="primary" onClick={onCreate}>
-              Ajouter un projet
+            <h3>{t('home.emptyTitle')}</h3>
+            <p>{t('home.emptyIntro')}</p>
+            <Button variant="primary" icon="plus-outline" onClick={onCreate}>
+              {t('home.addProject')}
             </Button>
-            <Button variant="secondary" onClick={onImport}>
-              Importer un fichier
+            <Button
+              variant="secondary"
+              icon="file-upload-outline"
+              onClick={onImport}
+            >
+              {t('home.importFile')}
             </Button>
           </div>
         ) : null}
@@ -93,17 +97,22 @@ export function ProjectHome({
                 >
                   <span className="project-card__name">{project.name}</span>
                   <span className="muted">
-                    Modifié le {new Date(project.updated_at).toLocaleDateString()}
+                    {t('home.modifiedOn', {
+                      date: dateFormat.format(new Date(project.updated_at)),
+                    })}
                   </span>
-                  <span className="project-card__action">Ouvrir le projet →</span>
+                  <span className="project-card__action">
+                    {t('home.openProject')}
+                    <Icon name="arrow-right-outline" size="xs" tone="inherit" />
+                  </span>
                 </Button>
                 <Button
                   variant="ghost"
                   className="project-list__delete"
-                  aria-label={`Supprimer le projet ${project.name}`}
+                  aria-label={t('home.deleteProject', { name: project.name })}
                   onClick={() => onDelete(project.id)}
                 >
-                  <span aria-hidden="true">×</span>
+                  <Icon name="trash-outline" size="sm" tone="inherit" />
                 </Button>
               </li>
             ))}

@@ -29,15 +29,17 @@ class Dimensions:
         return max(self.length, self.width, self.height)
 
 
-# The six axis-aligned orientations of a box, each paired with a stable
-# rotation code (0..5) reported in the placement output.
+# The orientations we accept from a load: it stays upright, and settles for a
+# flat quarter turn swapping length and width. Each carries a stable code,
+# reported in the placement.
+#
+# Laying a carton on its side would gain room, but that is not what one does
+# with a load: the bearing face changes, the label ends up underneath, and the
+# plan cannot be handled. A load too large for the pallet in both directions
+# does not go on it, rather than going on it standing up.
 _ORIENTATIONS: Tuple[Tuple[int, Tuple[int, int, int]], ...] = (
     (0, (0, 1, 2)),
     (1, (1, 0, 2)),
-    (2, (0, 2, 1)),
-    (3, (2, 1, 0)),
-    (4, (1, 2, 0)),
-    (5, (2, 0, 1)),
 )
 
 
@@ -49,6 +51,10 @@ class Item:
     dimensions: Dimensions
     weight: float
     stackable: bool = True
+    """May make a flat quarter turn to be stowed.
+
+    Never a tip onto its side: see ``_ORIENTATIONS``.
+    """
     rotatable: bool = True
 
     @property
@@ -59,8 +65,9 @@ class Item:
     def orientations(self) -> List[Tuple[Dimensions, int]]:
         """Return allowed (dimensions, rotation_code) pairs, de-duplicated.
 
-        A non-rotatable item keeps a single orientation (code 0). Symmetric
-        boxes (e.g. cubes) collapse duplicate orientations.
+        A non-rotatable item keeps a single orientation (code 0). A rotatable
+        one may also swap length and width, keeping its height. Symmetric
+        footprints collapse duplicate orientations.
         """
         sides = (
             self.dimensions.length,

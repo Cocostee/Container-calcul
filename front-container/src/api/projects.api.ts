@@ -1,9 +1,9 @@
-// HTTP calls for projects, optimization and results.
+// Appels HTTP des projets, des plans de chargement et des recommandations.
 import type {
-  OptimizeContainer,
   OptimizePaletteInput,
   OptimizeRequest,
   PlacementResult,
+  SizeAdvice,
 } from '../types/placement.types'
 import type {
   Project,
@@ -39,6 +39,12 @@ export async function deleteProject(id: string): Promise<void> {
   await apiClient.delete(`/projects/${id}`)
 }
 
+/**
+ * Répartit les colis dans les conteneurs du projet. Avec `auto_extend`, le
+ * serveur ajoute des conteneurs jusqu'à ce que rien ne reste à quai et les
+ * enregistre, si bien que le
+ * project must be reloaded afterwards to pick them up.
+ */
 export async function optimize(
   id: string,
   request: OptimizeRequest,
@@ -51,17 +57,36 @@ export async function optimize(
 }
 
 /**
- * Import files already describe loaded pallets. They therefore use the
- * container-only branch of the API instead of re-palletizing products.
+ * Recommande des tailles pour un lot qui n'est pas encore un projet — ce dont
+ * l'assistant d'import a besoin avant de creer quoi que ce soit.
  */
-export async function optimizeImportedPallets(
+export async function adviseSizes(
+  packages: OptimizePaletteInput[],
+  palletTypeId?: string | null,
+  palletize = true,
+): Promise<SizeAdvice> {
+  const { data } = await apiClient.post<SizeAdvice>('/size-advice', {
+    packages,
+    pallet_type_id: palletTypeId ?? null,
+    palletize,
+  })
+  return data
+}
+
+/** Combien de conteneurs et de palettes chaque taille de référence demanderait. */
+export async function getSizeAdvice(
   id: string,
-  container: OptimizeContainer,
-  pallets: OptimizePaletteInput[],
-): Promise<PlacementResult> {
-  const { data } = await apiClient.post<PlacementResult>(
-    `/projects/${id}/optimize`,
-    { container, palettes: pallets },
+  palletTypeId?: string | null,
+  palletize = true,
+): Promise<SizeAdvice> {
+  const { data } = await apiClient.get<SizeAdvice>(
+    `/projects/${id}/size-advice`,
+    {
+      params: {
+        ...(palletTypeId ? { pallet_type_id: palletTypeId } : {}),
+        palletize,
+      },
+    },
   )
   return data
 }

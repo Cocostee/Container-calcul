@@ -10,7 +10,7 @@ from api_container.config.database import Base
 
 
 class PlacementResult(Base):
-    """Persisted result of a packing computation for a project."""
+    """Persisted loading plan of a project, container by container."""
 
     __tablename__ = "placement_results"
 
@@ -21,15 +21,15 @@ class PlacementResult(Base):
     computed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+    # Fill rates across the whole shipment, weighted by container volume.
     fill_rate_volume: Mapped[float] = mapped_column(Float, nullable=False)
     fill_rate_weight: Mapped[float] = mapped_column(Float, nullable=False)
-    unplaced_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    # List of {palette_instance_id, x, y, z, length, width, height, rotation}.
-    placements: Mapped[List[dict]] = mapped_column(JSON, nullable=False)
-    # Generated pallets and their nested package placements (stage 1).
-    pallets: Mapped[List[dict]] = mapped_column(JSON, nullable=False, default=list)
+    # Packages that no container could take.
     unplaced_package_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
     )
+    # One entry per container: its envelope, its generated pallets and their
+    # placements. Kept as JSON because it is read as a whole, never queried.
+    containers: Mapped[List[dict]] = mapped_column(JSON, nullable=False, default=list)
 
     project: Mapped["Project"] = relationship(back_populates="results")

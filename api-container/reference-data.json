@@ -1,0 +1,96 @@
+{
+  "_lisez-moi": [
+    "Tailles de référence de l'application : conteneurs et palettes.",
+    "Ce fichier est lu au démarrage du serveur. Modifiez une valeur, redémarrez",
+    "le service backend, et la base est mise à jour :",
+    "    docker compose restart backend",
+    "",
+    "Ajouter une taille : ajoutez une entrée avec un « id » nouveau.",
+    "Modifier une taille : changez ses valeurs, l'« id » reste le même.",
+    "Retirer une taille : supprimez son entrée. La ligne n'est PAS effacée de",
+    "la base — des projets enregistrés s'y réfèrent — elle cesse simplement",
+    "d'être remise à jour. Pour la faire disparaître de l'application, il faut",
+    "vider la base (docker compose down -v).",
+    "",
+    "Toutes les longueurs sont en centimètres, les poids en kilogrammes.",
+    "« height_cm » d'une palette est la hauteur de son plancher ;",
+    "« default_load_height_cm » la hauteur de charge habituelle — c'est une",
+    "hauteur de montage, pas une limite : la cale du conteneur la relève quand",
+    "un colis l'exige.",
+    "",
+    "Une entrée invalide (cote nulle, « id » manquant) est ignorée et signalée",
+    "dans les journaux, sans empêcher le serveur de démarrer."
+  ],
+  "containers": [
+    {
+      "id": "20ft-standard",
+      "name": "Conteneur 20 pieds standard",
+      "length_cm": 589,
+      "width_cm": 235,
+      "height_cm": 239,
+      "max_weight_kg": 28230
+    },
+    {
+      "id": "40ft-standard",
+      "name": "Conteneur 40 pieds standard",
+      "length_cm": 1203,
+      "width_cm": 235,
+      "height_cm": 239,
+      "max_weight_kg": 26500
+    },
+    {
+      "id": "40ft-high-cube",
+      "name": "Conteneur 40 pieds High Cube",
+      "length_cm": 1203,
+      "width_cm": 235,
+      "height_cm": 269,
+      "max_weight_kg": 26500
+    },
+    {
+      "id": "45ft-high-cube",
+      "name": "Conteneur 45 pieds High Cube",
+      "length_cm": 1355,
+      "width_cm": 235,
+      "height_cm": 269,
+      "max_weight_kg": 27600
+    }
+  ],
+  "pallets": [
+    {
+      "id": "europe-epal",
+      "name": "Palette Europe (EPAL)",
+      "length_cm": 120,
+      "width_cm": 80,
+      "height_cm": 14.4,
+      "default_load_height_cm": 100,
+      "max_weight_kg": 1500
+    },
+    {
+      "id": "us-standard",
+      "name": "Palette Standard US",
+      "length_cm": 120,
+      "width_cm": 100,
+      "height_cm": 14.4,
+      "default_load_height_cm": 100,
+      "max_weight_kg": 1500
+    },
+    {
+      "id": "australian",
+      "name": "Palette Australienne",
+      "length_cm": 116.5,
+      "width_cm": 116.5,
+      "height_cm": 14.4,
+      "default_load_height_cm": 100,
+      "max_weight_kg": 1500
+    },
+    {
+      "id": "half-pallet",
+      "name": "Demi-palette",
+      "length_cm": 80,
+      "width_cm": 60,
+      "height_cm": 14.4,
+      "default_load_height_cm": 80,
+      "max_weight_kg": 750
+    }
+  ]
+}

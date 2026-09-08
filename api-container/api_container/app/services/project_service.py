@@ -8,15 +8,17 @@ from api_container.app.exceptions import (
     EntityNotFoundError,
     ValidationDomainError,
 )
-from api_container.app.models import PaletteInstance, Project
+from api_container.app.models import PackageLine, Project, ProjectContainer
 from api_container.app.repositories.project_repository import ProjectRepository
 from api_container.app.repositories.reference_repository import ReferenceRepository
 from api_container.app.schemas.palette_schema import (
-    PaletteInstanceCreate,
-    PaletteInstanceSchema,
+    PackageLineCreate,
+    PackageLineSchema,
 )
 from api_container.app.schemas.placement_schema import PlacementResultSchema
 from api_container.app.schemas.project_schema import (
+    ProjectContainerCreate,
+    ProjectContainerSchema,
     ProjectCreate,
     ProjectSchema,
     ProjectUpdate,
@@ -24,7 +26,7 @@ from api_container.app.schemas.project_schema import (
 
 
 class ProjectService:
-    """Business rules and orchestration for projects and their pallets."""
+    """Business rules for projects, their packages and their containers."""
 
     def __init__(self, db: Session) -> None:
         """Build the service around a request-scoped session."""
@@ -33,7 +35,7 @@ class ProjectService:
         self._reference = ReferenceRepository(db)
 
     def list_projects(self) -> List[Project]:
-        """Return all projects for the sidebar (summary rows)."""
+        """Return all projects for the project list (summary rows)."""
         return self._projects.list()
 
     def get_project(self, project_id: uuid.UUID) -> ProjectSchema:
@@ -41,16 +43,10 @@ class ProjectService:
         return self._to_schema(self._require_project(project_id))
 
     def create_project(self, data: ProjectCreate) -> ProjectSchema:
-        """Create a project with its initial pallet lines."""
-        self._validate_container(data.container_type_id)
-        self._validate_pallet(data.pallet_type_id)
-        project = Project(
-            name=data.name,
-            container_type_id=data.container_type_id,
-            pallet_type_id=data.pallet_type_id,
-            container_custom_dims=data.container_custom_dims,
-        )
-        project.palettes = [self._build_palette(p) for p in data.palettes]
+        """Create a project with its packages and its containers."""
+        project = Project(name=data.name)
+        project.packages = [self._build_package(p) for p in data.packages]
+        project.containers = self._build_containers(data.containers)
         self._projects.add(project)
         self._db.commit()
         self._db.refresh(project)
@@ -59,16 +55,12 @@ class ProjectService:
     def update_project(
         self, project_id: uuid.UUID, data: ProjectUpdate
     ) -> ProjectSchema:
-        """Replace a project's configuration and pallet lines."""
+        """Replace a project's packages and containers."""
         project = self._require_project(project_id)
-        self._validate_container(data.container_type_id)
-        self._validate_pallet(data.pallet_type_id)
         project.name = data.name
-        project.container_type_id = data.container_type_id
-        project.pallet_type_id = data.pallet_type_id
-        project.container_custom_dims = data.container_custom_dims
-        # delete-orphan cascade removes the previous pallet rows.
-        project.palettes = [self._build_palette(p) for p in data.palettes]
+        # delete-orphan cascade removes the rows that are no longer listed.
+        project.packages = [self._build_package(p) for p in data.packages]
+        project.containers = self._build_containers(data.containers)
         self._db.commit()
         self._db.refresh(project)
         return self._to_schema(project)
@@ -85,7 +77,25 @@ class ProjectService:
             raise EntityNotFoundError(f"Project '{project_id}' not found")
         return project
 
-    def _validate_container(self, container_type_id: Optional[str]) -> None:
+    def _build_containers(
+        self, containers: List[ProjectContainerCreate]
+    ) -> List[ProjectContainer]:
+        """Build the container rows, numbered in loading order."""
+        built: List[ProjectContainer] = []
+        for position, data in enumerate(containers, start=1):
+            self._validate_container_type(data.container_type_id)
+            self._validate_pallet_type(data.pallet_type_id)
+            built.append(
+                ProjectContainer(
+                    position=position,
+                    container_type_id=data.container_type_id,
+                    container_custom_dims=data.container_custom_dims,
+                    pallet_type_id=data.pallet_type_id,
+                )
+            )
+        return built
+
+    def _validate_container_type(self, container_type_id: Optional[str]) -> None:
         if (
             container_type_id is not None
             and self._reference.get_container_type(container_type_id) is None
@@ -94,7 +104,7 @@ class ProjectService:
                 f"Unknown container type '{container_type_id}'"
             )
 
-    def _validate_pallet(self, pallet_type_id: Optional[str]) -> None:
+    def _validate_pallet_type(self, pallet_type_id: Optional[str]) -> None:
         if (
             pallet_type_id is not None
             and self._reference.get_palette_type(pallet_type_id) is None
@@ -102,8 +112,8 @@ class ProjectService:
             raise ValidationDomainError(f"Unknown pallet type '{pallet_type_id}'")
 
     @staticmethod
-    def _build_palette(data: PaletteInstanceCreate) -> PaletteInstance:
-        return PaletteInstance(
+    def _build_package(data: PackageLineCreate) -> PackageLine:
+        return PackageLine(
             palette_type_id=data.palette_type_id,
             label=data.label,
             length_cm=data.length_cm,
@@ -122,10 +132,10 @@ class ProjectService:
             name=project.name,
             created_at=project.created_at,
             updated_at=project.updated_at,
-            container_type_id=project.container_type_id,
-            pallet_type_id=project.pallet_type_id,
-            container_custom_dims=project.container_custom_dims,
-            palettes=[PaletteInstanceSchema.from_orm(p) for p in project.palettes],
+            packages=[PackageLineSchema.from_orm(p) for p in project.packages],
+            containers=[
+                ProjectContainerSchema.from_orm(c) for c in project.containers
+            ],
             last_result=(
                 PlacementResultSchema.from_orm(last_result)
                 if last_result is not None

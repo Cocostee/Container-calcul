@@ -1,15 +1,16 @@
-import type { PlacementResult } from '../types/placement.types'
+import { useTranslation } from '../i18n'
+import type { ContainerLoad, PlacementResult } from '../types/placement.types'
 import { formatPercent } from '../utils/formatVolume'
 import { Badge } from './ui/Badge/Badge'
-import { Button } from './ui/Button/Button'
+import { Icon } from './ui/Icon'
 import { Spinner } from './ui/Spinner/Spinner'
 
 interface ResultsPanelProps {
   result: PlacementResult | null
+  /** Conteneur inspecté : ses chiffres passent devant ceux de l'expédition. */
+  load: ContainerLoad | null
   isOptimizing: boolean
   error: string | null
-  isImported?: boolean
-  onRecalculate: () => void
 }
 
 interface FillBarProps {
@@ -40,40 +41,39 @@ function FillBar({ label, rate }: FillBarProps) {
   )
 }
 
+/*
+ * Aucun bouton « Recalculer » : le plan suit la configuration de lui-même, et
+ * un bouton qui relance tout — extension automatique comprise — défaisait les
+ * réglages qu'on venait de faire à la main.
+ */
 export function ResultsPanel({
   result,
+  load,
   isOptimizing,
   error,
-  isImported = false,
-  onRecalculate,
 }: ResultsPanelProps) {
-  const displayedPalletCount = result
-    ? result.pallets.length || result.placements.length
-    : 0
-  const isImportedPalletResult = Boolean(
-    result && result.pallets.length === 0 && result.placements.length > 0,
-  )
-  const distributedPackageCount = result?.pallets.reduce(
-    (total, pallet) => total + pallet.package_count,
-    0,
-  ) ?? 0
+  const { t } = useTranslation()
+
+  const palletCount = load?.pallets.length ?? 0
+  const loadCount = load?.placements.length ?? 0
+  const packageCount =
+    load?.pallets.reduce((total, pallet) => total + pallet.package_count, 0) ?? 0
 
   return (
     <section className="results-panel" aria-labelledby="results-title">
       <div className="results-panel__header">
-        <div>
-          <p className="panel-heading__eyebrow">Suivi</p>
-          <h2 id="results-title">Résultats</h2>
+        <div className="results-panel__title">
+          <Icon
+            name="chart-pie-solid"
+            size="md"
+            tone="accent"
+            className="panel-heading__glyph"
+          />
+          <div>
+            <p className="panel-heading__eyebrow">{t('results.eyebrow')}</p>
+            <h2 id="results-title">{t('results.title')}</h2>
+          </div>
         </div>
-        {!isImported ? (
-          <Button
-            variant="primary"
-            onClick={onRecalculate}
-            disabled={isOptimizing}
-          >
-            {isOptimizing ? 'Calcul…' : 'Recalculer'}
-          </Button>
-        ) : null}
       </div>
 
       {error ? (
@@ -81,62 +81,63 @@ export function ResultsPanel({
           {error}
         </p>
       ) : null}
-      {isOptimizing ? <Spinner label="Optimisation en cours…" /> : null}
+      {isOptimizing ? <Spinner label={t('results.optimizing')} /> : null}
 
-      {result ? (
+      {result && load ? (
         <div className="results-panel__body">
           <div className="palletization-summary">
             <span className="palletization-summary__number">
-              {displayedPalletCount}
+              {palletCount > 0 ? palletCount : loadCount}
             </span>
             <div>
               <strong>
-                palette{displayedPalletCount > 1 ? 's' : ''}{' '}
-                {isImportedPalletResult ? 'importée' : 'générée'}
-                {displayedPalletCount > 1 ? 's' : ''}
+                {palletCount > 0
+                  ? t('results.palletsBuilt', { count: palletCount })
+                  : t('results.loadsPlaced', { count: loadCount })}
               </strong>
               <p>
-                {isImportedPalletResult
-                  ? 'Palettes prêtes à être contrôlées dans le conteneur'
-                  : `${distributedPackageCount} colis répartis à l’étape 2`}
+                {palletCount > 0
+                  ? t('results.fromPackages', { count: packageCount })
+                  : t('results.readyToCheck')}
               </p>
             </div>
           </div>
-          <FillBar label="Remplissage volumique" rate={result.fill_rate_volume} />
-          <FillBar label="Remplissage pondéral" rate={result.fill_rate_weight} />
-          <div className="results-panel__unplaced">
-            {result.unplaced_package_count > 0 ? (
-              <div className="results-panel__alert" role="alert">
-                <Badge variant="danger">
-                  {result.unplaced_package_count} colis non réparti
-                  {result.unplaced_package_count > 1 ? 's' : ''}
-                </Badge>
-                <p>
-                  Certains colis dépassent la surface, la hauteur ou la charge
-                  maximale de la palette sélectionnée.
-                </p>
-              </div>
-            ) : result.unplaced_count > 0 ? (
-              <div className="results-panel__alert" role="alert">
-                <Badge variant="danger">
-                  {result.unplaced_count} palette(s) non placée(s) dans le
-                  conteneur
-                </Badge>
-                <p>
-                  Conteneur saturé : choisissez un conteneur plus grand ou une
-                  palette moins haute pour y placer tout le stock.
-                </p>
-              </div>
-            ) : (
-              <Badge variant="success">
-                Tous les colis et toutes les palettes sont placés
+
+          <FillBar
+            label={t('results.fillVolume')}
+            rate={load.fill_rate_volume}
+          />
+          <FillBar
+            label={t('results.fillWeight')}
+            rate={load.fill_rate_weight}
+          />
+
+          {/* Le total de l'expédition, sous les chiffres du conteneur. */}
+          <p className="results-panel__shipment">
+            <Icon name="stack-outline" size="sm" tone="faint" />
+            {t('results.shipmentTotal', {
+              containers: result.containers.length,
+              fill: formatPercent(result.fill_rate_volume),
+            })}
+          </p>
+
+          {result.unplaced_package_count > 0 ? (
+            <div className="results-panel__alert" role="alert">
+              <Badge variant="danger">
+                {t('plan.leftOver', { count: result.unplaced_package_count })}
               </Badge>
-            )}
-          </div>
+              <p>{t('plan.leftOverHelp')}</p>
+            </div>
+          ) : (
+            <Badge variant="success">{t('plan.allLoaded')}</Badge>
+          )}
         </div>
       ) : (
         !isOptimizing && (
-          <p className="muted">Lancez un calcul pour voir les résultats.</p>
+          <p className="muted">
+            <Icon name="info-circle-outline" size="sm" tone="accent" />
+            {t('results.empty')}
+          </p>
         )
       )}
     </section>

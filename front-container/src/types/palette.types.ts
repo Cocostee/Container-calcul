@@ -1,4 +1,4 @@
-// Shared palette types, aligned with the API palette schemas.
+// Types de palette et de colis partagés, alignés sur les schémas de l'API.
 
 export interface PaletteType {
   id: string
@@ -10,8 +10,8 @@ export interface PaletteType {
   max_weight_kg: number
 }
 
-// A pallet line as returned by the API (persisted, has a UUID).
-export interface PaletteInstance {
+// Une ligne de colis telle que l'API la rend : enregistrée, donc avec un UUID.
+export interface PackageLine {
   id: string
   palette_type_id: string | null
   label: string
@@ -24,11 +24,11 @@ export interface PaletteInstance {
   rotatable: boolean
 }
 
-// Payload shape when creating/updating a pallet line (no server id yet).
-export type PaletteInstanceInput = Omit<PaletteInstance, 'id'>
+// Ce qu'on envoie pour créer ou modifier une ligne : pas encore d'identifiant.
+export type PackageLineInput = Omit<PackageLine, 'id'>
 
-// A pallet line while editing locally, tracked by a stable client id.
-export interface PaletteDraft extends PaletteInstanceInput {
+// A package line while editing locally, tracked by a stable client id.
+export interface PackageDraft extends PackageLineInput {
   clientId: string
   persistedId?: string
 }

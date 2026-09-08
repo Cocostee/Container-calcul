@@ -6,35 +6,58 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from api_container.app.schemas.palette_schema import (
-    PaletteInstanceCreate,
-    PaletteInstanceSchema,
+    PackageLineCreate,
+    PackageLineSchema,
 )
 from api_container.app.schemas.placement_schema import PlacementResultSchema
 
 
+class ProjectContainerBase(BaseModel):
+    """One container of the project: its size and its pallet format."""
+
+    container_type_id: Optional[str] = None
+    container_custom_dims: Optional[dict] = None
+    pallet_type_id: Optional[str] = None
+
+
+class ProjectContainerCreate(ProjectContainerBase):
+    """Payload to declare a container inside a project."""
+
+
+class ProjectContainerSchema(ProjectContainerBase):
+    """Persisted container of a project."""
+
+    id: uuid.UUID
+    position: int
+
+    class Config:
+        """Enable population from SQLAlchemy model instances."""
+
+        orm_mode = True
+
+
 class ProjectBase(BaseModel):
-    """Shared project configuration fields."""
+    """Shared project fields."""
 
     name: str
-    container_type_id: Optional[str] = None
-    pallet_type_id: Optional[str] = None
-    container_custom_dims: Optional[dict] = None
 
 
 class ProjectCreate(ProjectBase):
-    """Payload to create a project."""
+    """Payload to create a project with its packages and containers."""
 
-    palettes: List[PaletteInstanceCreate] = Field(default_factory=list)
+    packages: List[PackageLineCreate] = Field(default_factory=list)
+    containers: List[ProjectContainerCreate] = Field(default_factory=list)
 
 
 class ProjectUpdate(ProjectBase):
-    """Payload to fully update a project's config and pallets."""
+    """Payload to fully replace a project's packages and containers."""
 
-    palettes: List[PaletteInstanceCreate] = Field(default_factory=list)
+    packages: List[PackageLineCreate] = Field(default_factory=list)
+    containers: List[ProjectContainerCreate] = Field(default_factory=list)
 
 
 class ProjectSummarySchema(BaseModel):
-    """Lightweight project entry for the sidebar list."""
+    """Lightweight project entry for the project list."""
 
     id: uuid.UUID
     name: str
@@ -48,10 +71,11 @@ class ProjectSummarySchema(BaseModel):
 
 
 class ProjectSchema(ProjectBase):
-    """Full project detail: config + pallets + last computed result."""
+    """Full project detail: packages, containers and last computed plan."""
 
     id: uuid.UUID
     created_at: datetime
     updated_at: datetime
-    palettes: List[PaletteInstanceSchema] = Field(default_factory=list)
+    packages: List[PackageLineSchema] = Field(default_factory=list)
+    containers: List[ProjectContainerSchema] = Field(default_factory=list)
     last_result: Optional[PlacementResultSchema] = None

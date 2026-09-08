@@ -1,5 +1,6 @@
 import { Edges, Html } from '@react-three/drei'
 import { useState } from 'react'
+import { useTranslation } from '../../i18n'
 
 interface PaletteMeshProps {
   position: [number, number, number]
@@ -16,16 +17,17 @@ interface PaletteMeshProps {
 
 const WOOD_LIGHT = '#d6a15e'
 const WOOD_DARK = '#a86632'
-const DIRECTION_COLOR = '#2dd4bf'
+const DIRECTION_COLOR = '#79d5e3'
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
 
 /**
- * A reusable wooden pallet model. The deck boards, blocks and runners make
- * the pallet's physical orientation obvious, while the teal arrows show the
- * fork-entry / forward direction used throughout the 3D views.
+ * Une palette de bois, réutilisable telle quelle. Les planches, les dés et
+ * les semelles rendent son orientation physique évidente ; les flèches bleues
+ * indiquent l'entrée des fourches, c'est-à-dire l'avant, dans toutes les vues
+ * en 3D.
  */
 export function PaletteMesh({
   position,
@@ -39,6 +41,7 @@ export function PaletteMesh({
   selected = false,
   onSelect,
 }: PaletteMeshProps) {
+  const { t } = useTranslation()
   const [hovered, setHovered] = useState(false)
   const [length, totalHeight, width] = size
   const palletHeight = clamp(
@@ -148,9 +151,11 @@ export function PaletteMesh({
           <strong>{label}</strong>
           <div>{dimsLabel}</div>
           <div>{weightKg} kg</div>
-          <div>Sens : flèches vers la barre colorée</div>
-          {packageCount !== undefined ? <div>{packageCount} colis</div> : null}
-          {onSelect ? <div>Cliquez pour voir le chargement</div> : null}
+          <div>{t('scene.orientation')}</div>
+          {packageCount !== undefined ? (
+            <div>{t('scene.palletPackages', { count: packageCount })}</div>
+          ) : null}
+          {onSelect ? <div>{t('scene.clickToInspect')}</div> : null}
         </Html>
       ) : null}
     </group>

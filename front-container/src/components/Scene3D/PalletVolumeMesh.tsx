@@ -8,8 +8,9 @@ interface PalletVolumeMeshProps {
 }
 
 /**
- * Transparent envelope of a loaded pallet. It deliberately uses the complete
- * loaded height so planners can compare occupied volumes at a glance.
+ * Enveloppe transparente d'une palette chargée. Elle prend délibérément la
+ * hauteur de charge complète : c'est ainsi qu'on compare des volumes occupés
+ * d'un coup d'œil.
  */
 export function PalletVolumeMesh({
   position,

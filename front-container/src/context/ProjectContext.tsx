@@ -25,7 +25,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   )
 }
 
-// Access the active-project coordination state (sidebar <-> editor).
+// Le projet actif, partagé entre le rail latéral et l'éditeur.
 // eslint-disable-next-line react-refresh/only-export-components
 export function useProjectContext(): ProjectContextValue {
   const context = useContext(ProjectContext)

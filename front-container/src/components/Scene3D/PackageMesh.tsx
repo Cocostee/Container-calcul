@@ -1,5 +1,6 @@
 import { Edges, Html } from '@react-three/drei'
 import { useState } from 'react'
+import { useTranslation } from '../../i18n'
 
 interface PackageMeshProps {
   position: [number, number, number]
@@ -8,8 +9,9 @@ interface PackageMeshProps {
   label: string
 }
 
-/** One package revealed inside the currently selected generated pallet. */
+/** Un colis, dévoilé dans la palette montée que l'on inspecte. */
 export function PackageMesh({ position, size, color, label }: PackageMeshProps) {
+  const { t } = useTranslation()
   const [hovered, setHovered] = useState(false)
 
   return (
@@ -27,7 +29,7 @@ export function PackageMesh({ position, size, color, label }: PackageMeshProps) 
       {hovered ? (
         <Html center distanceFactor={8} className="mesh-tooltip">
           <strong>{label}</strong>
-          <div>Colis dans la palette sélectionnée</div>
+          <div>{t('scene.packageInSelected')}</div>
         </Html>
       ) : null}
     </mesh>

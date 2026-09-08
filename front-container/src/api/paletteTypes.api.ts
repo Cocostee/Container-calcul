@@ -1,4 +1,4 @@
-// HTTP calls for palette reference types.
+// Appels HTTP des formats de palette de référence.
 import type { PaletteType } from '../types/palette.types'
 import { apiClient } from './client'
 

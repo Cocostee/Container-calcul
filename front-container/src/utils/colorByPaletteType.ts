@@ -1,8 +1,8 @@
-// Deterministic colour for a pallet group, based on its instance id.
+// Une couleur stable par groupe de palettes, tirée de son identifiant.
 import { PALETTE_COLORS } from './constants'
 
-// Exploded item ids look like "p1-0"; strip the trailing index so every item
-// of the same pallet group shares a colour.
+// Un colis éclaté porte un identifiant du genre « p1-0 » : on retire l'indice
+// final pour que tout le groupe partage la même couleur.
 function groupKey(paletteInstanceId: string): string {
   return paletteInstanceId.replace(/-\d+$/, '')
 }

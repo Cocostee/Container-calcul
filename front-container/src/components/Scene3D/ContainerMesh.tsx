@@ -1,4 +1,4 @@
-// Semi-transparent wireframe box representing the container (scene units).
+// Caisse en fil de fer semi-transparente : le conteneur, en unités de scène.
 interface ContainerMeshProps {
   length: number
   width: number

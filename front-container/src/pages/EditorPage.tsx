@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import { AppControls } from '../components/AppControls'
 import { ConfigurationSummary } from '../components/ConfigurationSummary'
+import { ContainerList } from '../components/ContainerList'
+import { LoadingPlan } from '../components/LoadingPlan'
+import { PackageImportButton } from '../components/PackageImportButton'
 import { PaletteTable } from '../components/PaletteTable'
-import { PalletizationScene } from '../components/Scene3D/PalletizationScene'
-import { Scene } from '../components/Scene3D/Scene'
+import { PanelHeading } from '../components/PanelHeading'
 import { ProjectHome } from '../components/ProjectHome'
 import { ResultsPanel } from '../components/ResultsPanel'
-import { ContainerSelector } from '../components/Sidebar/ContainerSelector'
+import { Scene } from '../components/Scene3D/Scene'
+import { PalletizationScene } from '../components/Scene3D/PalletizationScene'
 import { PaletteForm } from '../components/Sidebar/PaletteForm'
-import { PalletSelector } from '../components/Sidebar/PalletSelector'
 import {
   WorkflowSteps,
   type WorkflowStepNumber,
@@ -23,32 +26,28 @@ import { usePaletteForm } from '../hooks/usePaletteForm'
 import { usePaletteTypes } from '../hooks/usePaletteTypes'
 import { useProjectEditor } from '../hooks/useProjectEditor'
 import { useProjects } from '../hooks/useProjects'
+import { useSizeAdvice } from '../hooks/useSizeAdvice'
+import { useTranslation } from '../i18n'
+import type { EditorOverrides } from '../hooks/useProjectEditor'
+import type { PackageLineInput } from '../types/palette.types'
+import type { PlacementResult } from '../types/placement.types'
 import {
   NEW_PROJECT_ID,
   newProjectStepPath,
   projectStepPath,
 } from '../router/workflowRoutes'
-import { CUSTOM_CONTAINER_VALUE } from '../utils/constants'
 
-const STEP_COPY: Record<WorkflowStepNumber, { title: string; description: string }> = {
-  1: {
-    title: 'Configurer le chargement',
-    description:
-      'Choisissez le conteneur et le modèle de palette qui serviront au calcul.',
-  },
-  2: {
-    title: 'Charger les palettes',
-    description:
-      'Ajoutez les colis, calculez leur répartition et vérifiez toutes les palettes en 3D.',
-  },
-  3: {
-    title: 'Placer les palettes dans le conteneur',
-    description:
-      'Contrôlez le chargement final, explorez une palette et utilisez la vue éclatée.',
-  },
+const STEP_KEYS: Record<
+  WorkflowStepNumber,
+  { title: string; description: string }
+> = {
+  1: { title: 'editor.step1Title', description: 'editor.step1Description' },
+  2: { title: 'editor.step2Title', description: 'editor.step2Description' },
+  3: { title: 'editor.step3Title', description: 'editor.step3Description' },
 }
 
 export function EditorPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { projectId: routeProjectId, step: routeStep } = useParams()
   const { containerTypes } = useContainerTypes()
@@ -56,14 +55,24 @@ export function EditorPage() {
   const projects = useProjects()
   const editor = useProjectEditor()
   const optimization = useOptimization()
-  const paletteForm = usePaletteForm(editor.addPalette)
   const { selectProject, clearProject } = useProjectContext()
   const [routeError, setRouteError] = useState<string | null>(null)
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameDraft, setRenameDraft] = useState('')
   const [renameError, setRenameError] = useState<string | null>(null)
-  const lastCalculatedSignature = useRef<string | null>(null)
-  const calculateRef = useRef<() => Promise<boolean>>(async () => false)
+  const [inspectedPosition, setInspectedPosition] = useState(1)
+  const workspaceRef = useRef<HTMLElement>(null)
+  const [dockIsStuck, setDockIsStuck] = useState(false)
+  /*
+   * Le calcul peut ajouter des conteneurs pour vider le quai. Ils sont copiés
+   * du dernier déclaré, donc pas forcément du matériel dont on dispose : on
+   * le dit, plutôt que de les faire apparaître en silence. « rétabli » est le
+   * même fait après une suppression, où il se lit autrement.
+   */
+  const [fleetNotice, setFleetNotice] = useState<{
+    kind: 'added' | 'restored'
+    count: number
+  } | null>(null)
   const handledRouteProjectId = useRef<string | null>(null)
 
   const { loadProjectById } = editor
@@ -71,8 +80,30 @@ export function EditorPage() {
   const isWorkflowRoute = Boolean(routeProjectId && routeStep)
   const currentStep = (Number(routeStep) || 1) as WorkflowStepNumber
 
-  // URL middleware validates the shape of the route; this effect loads its
-  // project payload and makes browser refresh/back navigation reliable.
+  const packageCount = useMemo(
+    () => editor.packages.reduce((total, item) => total + item.quantity, 0),
+    [editor.packages],
+  )
+  const packageLineCount = editor.packages.length
+  const hasContainers = editor.containers.length > 0
+  // Tout voyage sur palette : un conteneur sans format ne peut rien recevoir.
+  const everyContainerHasPallet = editor.containers.every(
+    (draft) => draft.pallet_type_id !== null,
+  )
+  const isReadyToCalculate =
+    packageCount > 0 && hasContainers && everyContainerHasPallet
+
+  // Les recommandations portent sur les colis enregistrés : elles suivent le
+  // format de palette du premier conteneur, pour être comparables. Tant
+  // qu'aucun n'est choisi, c'est le format le mieux placé qui sert de base —
+  // tout voyage sur palette, donc il y en a toujours un.
+  const { advice, refresh: refreshAdvice } = useSizeAdvice(
+    editor.projectId,
+    editor.containers[0]?.pallet_type_id ?? null,
+  )
+
+  // Le routeur valide la forme de l'URL ; cet effet en charge le projet, ce
+  // qui rend fiables le rechargement et le bouton « précédent » du navigateur.
   useEffect(() => {
     if (!isWorkflowRoute || !routeProjectId) {
       handledRouteProjectId.current = null
@@ -97,7 +128,7 @@ export function EditorPage() {
 
     void loadProjectById(routeProjectId).then((project) => {
       if (!project) {
-        setRouteError('Ce projet est introuvable ou ne peut pas être chargé.')
+        setRouteError(t('errors.projectNotFound'))
         return
       }
       selectProject(project.id)
@@ -113,58 +144,29 @@ export function EditorPage() {
     routeProjectId,
     selectProject,
     setResult,
+    t,
   ])
 
-  const sceneContainer = editor.resolveContainer(containerTypes)
-  const packageLineCount = editor.palettes.length
-  const packageCount = useMemo(
-    () => editor.palettes.reduce((total, item) => total + item.quantity, 0),
-    [editor.palettes],
-  )
-  const effectivePalletId = editor.palletTypeId ?? ''
-  const selectedPalletType = useMemo(
-    () => paletteTypes.find((type) => type.id === effectivePalletId) ?? null,
-    [paletteTypes, effectivePalletId],
-  )
-  const selectedPallet = useMemo(
-    () =>
-      selectedPalletType
-        ? {
-            id: selectedPalletType.id,
-            label: selectedPalletType.name,
-            length_cm: selectedPalletType.length_cm,
-            width_cm: selectedPalletType.width_cm,
-            base_height_cm: selectedPalletType.height_cm,
-            max_load_height_cm: selectedPalletType.default_load_height_cm,
-            max_weight_kg: selectedPalletType.max_weight_kg,
-          }
-        : null,
-    [selectedPalletType],
-  )
-  const isImportedProject =
-    editor.palletTypeId === null &&
-    editor.palettes.length > 0 &&
-    editor.palettes.every((pallet) =>
-      pallet.label.startsWith('Palette importée'),
-    )
-  const isConfigured =
-    Boolean(sceneContainer) && (Boolean(selectedPallet) || isImportedProject)
-  const isReadyToCalculate = isConfigured && packageCount > 0
-  const generatedPalletCount = optimization.result
-    ? optimization.result.pallets.length || optimization.result.placements.length
-    : 0
-  const isRouteLoading =
-    isWorkflowRoute &&
-    routeProjectId !== NEW_PROJECT_ID &&
-    routeProjectId !== editor.projectId &&
-    !routeError
+  /*
+   * Changer d'étape ramène en haut. On arrive par les flèches du bas de page,
+   * et sans cela on se retrouvait au bas de l'étape suivante, devant son pied
+   * de page — jamais devant ce qu'on venait y faire.
+   */
+  useEffect(() => {
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)')
+      .matches
+      ? 'auto'
+      : 'smooth'
+    // Le plan de travail défile sur grand écran, la fenêtre en dessous de
+    // 1060px : les deux sont remis en haut, l'inactif ne bouge pas.
+    workspaceRef.current?.scrollTo({ top: 0, behavior })
+    window.scrollTo({ top: 0, behavior })
+  }, [currentStep])
 
-  // Step 3 only makes sense when the persisted project has an optimization
-  // result. This is the data-level half of the URL access middleware.
+  // L'étape 3 n'a de sens qu'avec un plan calculé.
   useEffect(() => {
     if (
       currentStep !== 3 ||
-      isRouteLoading ||
       routeError ||
       !routeProjectId ||
       routeProjectId === NEW_PROJECT_ID ||
@@ -177,81 +179,216 @@ export function EditorPage() {
   }, [
     currentStep,
     editor.projectId,
-    isRouteLoading,
     navigate,
     optimization.result,
     routeError,
     routeProjectId,
   ])
-  const optimizationSignature = useMemo(
-    () =>
-      JSON.stringify({
-        container: editor.containerValue,
-        customDimensions:
-          editor.containerValue === CUSTOM_CONTAINER_VALUE
-            ? editor.customDims
-            : null,
-        pallet: effectivePalletId,
-        packages: editor.palettes.map((item) => ({
-          label: item.label,
-          length: item.length_cm,
-          width: item.width_cm,
-          height: item.height_cm,
-          weight: item.weight_kg,
-          quantity: item.quantity,
-          stackable: item.stackable,
-          rotatable: item.rotatable,
-        })),
-      }),
+
+  const inspectedLoad = useMemo(() => {
+    if (!optimization.result) return null
+    return (
+      optimization.result.containers.find(
+        (load) => load.position === inspectedPosition,
+      ) ?? optimization.result.containers[0] ?? null
+    )
+  }, [optimization.result, inspectedPosition])
+
+  const saveProject = useCallback(
+    async (
+      projectName?: string,
+      overrides?: EditorOverrides,
+    ): Promise<string | null> => {
+      const saved = await editor.save(projectName, overrides)
+      if (!saved) return null
+      await projects.refresh()
+      selectProject(saved.id)
+      return saved.id
+    },
+    [editor, projects, selectProject],
+  )
+
+  /**
+   * Lance la répartition. `autoExtend` laisse le serveur ajouter les
+   * conteneurs manquants ; on recharge alors le projet pour récupérer ceux
+   * qu'il a créés.
+   */
+  const handleCalculate = useCallback(
+    async (
+      autoExtend: boolean,
+      overrides?: EditorOverrides,
+    ): Promise<PlacementResult | null> => {
+      const request = editor.buildOptimizeRequest(
+        containerTypes,
+        paletteTypes,
+        autoExtend,
+        overrides,
+      )
+      if (!request) return null
+
+      // La configuration calculée est aussi celle qu'on enregistre.
+      const projectId = await saveProject(undefined, overrides)
+      if (!projectId) return null
+
+      const outcome = await optimization.run(projectId, request)
+      if (!outcome) return null
+
+      if (outcome.didExtend) {
+        await editor.loadProjectById(projectId)
+      }
+      const added =
+        outcome.result.containers.length - request.containers.length
+      setFleetNotice(added > 0 ? { kind: 'added', count: added } : null)
+      void refreshAdvice()
+      return outcome.result
+    },
     [
-      editor.containerValue,
-      editor.customDims,
-      editor.palettes,
-      effectivePalletId,
+      containerTypes,
+      editor,
+      optimization,
+      paletteTypes,
+      refreshAdvice,
+      saveProject,
     ],
   )
-  const containerName = useMemo(() => {
-    if (editor.containerValue === CUSTOM_CONTAINER_VALUE) {
-      return 'Conteneur personnalisé'
-    }
-    return (
-      containerTypes.find((type) => type.id === editor.containerValue)?.name ??
-      'Conteneur à sélectionner'
+
+  /*
+   * Modifier la liste des conteneurs met le plan à jour dans le même geste :
+   * aucune palette ne doit rester à quai en attendant qu'on pense à relancer
+   * le calcul. Tant qu'aucun plan n'existe, le geste ne fait que déclarer —
+   * c'est le bouton « Calculer » de l'étape 2 qui l'établira.
+   */
+  /**
+   * Répercute un changement de configuration sur le plan, dans le même geste.
+   * Tant qu'aucun plan n'existe, le geste ne fait que déclarer — c'est le
+   * bouton « Calculer » de l'étape 2 qui l'établira.
+   */
+  const syncPlan = useCallback(
+    async (overrides: EditorOverrides) => {
+      if (!optimization.result) return
+      await handleCalculate(true, overrides)
+    },
+    [handleCalculate, optimization.result],
+  )
+
+  /*
+   * Quand des colis restent à quai, la cause n'est pas toujours le nombre de
+   * conteneurs : un format de palette qui ne peut pas porter les charges les
+   * bloque tous. Le dire, et proposer le format qui passe, plutôt que de
+   * laisser ajouter des conteneurs sans effet.
+   */
+  const palletBlockage = useMemo(() => {
+    const chosen = editor.containers[0]?.pallet_type_id
+    const current = advice?.pallets.find(
+      (entry) => entry.pallet_type_id === chosen,
     )
-  }, [containerTypes, editor.containerValue])
-
-  const saveProject = useCallback(async (projectName?: string): Promise<string | null> => {
-    const saved = await editor.save(effectivePalletId, projectName)
-    if (!saved) return null
-    await projects.refresh()
-    selectProject(saved.id)
-    return saved.id
-  }, [editor, effectivePalletId, projects, selectProject])
-
-  const handleSave = async () => {
-    const savedProjectId = await saveProject()
-    if (savedProjectId) {
-      navigate(projectStepPath(savedProjectId, currentStep), { replace: true })
+    if (!current || current.unplaced_package_count === 0) return null
+    const better = advice?.pallets.find(
+      (entry) => entry.recommended && entry.unplaced_package_count === 0,
+    )
+    return {
+      name: current.name,
+      count: current.unplaced_package_count,
+      better: better
+        ? { id: better.pallet_type_id, name: better.name }
+        : null,
     }
+  }, [advice, editor.containers])
+
+  const handleUsePallet = useCallback(
+    async (palletTypeId: string) => {
+      const containers = editor.setAllPallets(palletTypeId)
+      setDockIsStuck(false)
+      await handleCalculate(true, { containers })
+    },
+    [editor, handleCalculate],
+  )
+
+  /**
+   * Retire un conteneur. Si l'expédition ne tient pas sans lui, le calcul le
+   * rétablit — aucun colis ne reste à quai — et on le dit, plutôt que de
+   * laisser croire que la suppression n'a rien fait.
+   */
+  const handleRemoveContainer = useCallback(
+    async (clientId: string) => {
+      const containers = editor.removeContainer(clientId)
+      if (!optimization.result) return
+      const plan = await handleCalculate(true, { containers })
+      const restored = plan
+        ? plan.containers.length - containers.length
+        : 0
+      if (restored > 0) {
+        setFleetNotice({ kind: 'restored', count: restored })
+      }
+    },
+    [editor, handleCalculate, optimization.result],
+  )
+
+  /**
+   * Ajoute un conteneur et y verse ce qui attendait à quai. Si le reliquat ne
+   * bouge pas, aucun conteneur de cette taille ne peut le prendre : on le dit
+   * plutôt que de laisser le bouton sans effet visible.
+   */
+  const handleAddContainer = useCallback(async () => {
+    const leftBefore = optimization.result?.unplaced_package_count ?? 0
+    // Les conteneurs suivants reprennent le dernier déclaré ; le premier part
+    // des tailles les mieux placées, pour n'avoir rien à régler avant de voir
+    // un plan.
+    const seed =
+      editor.containers.length === 0
+        ? {
+            container_type_id:
+              advice?.containers.find((entry) => entry.recommended)
+                ?.container_type_id ?? containerTypes[0]?.id ?? null,
+            pallet_type_id:
+              advice?.pallets.find((entry) => entry.recommended)
+                ?.pallet_type_id ?? paletteTypes[0]?.id ?? null,
+          }
+        : undefined
+    const containers = editor.addContainer(seed)
+    setDockIsStuck(false)
+    if (!optimization.result) return
+    const plan = await handleCalculate(true, { containers })
+    if (plan && leftBefore > 0 && plan.unplaced_package_count >= leftBefore) {
+      setDockIsStuck(true)
+    }
+  }, [
+    advice,
+    containerTypes,
+    editor,
+    handleCalculate,
+    optimization.result,
+    paletteTypes,
+  ])
+
+  /*
+   * Le lot commande le plan autant que la flotte : chaque geste sur les colis
+   * le refait dans le même mouvement. Sans cela, on ajoutait des colis au lot
+   * et le plan restait celui d'avant.
+   *
+   * Tout geste sur la liste rend le formulaire à l'ajout : l'enregistrement
+   * régénère les identifiants de brouillon, si bien qu'une modification en
+   * cours pointerait sur une ligne disparue.
+   */
+  const paletteForm = usePaletteForm(
+    (values) => void syncPlan({ packages: editor.addPackage(values) }),
+    (clientId, patch) =>
+      void syncPlan({ packages: editor.updatePackage(clientId, patch) }),
+  )
+
+  const handleDuplicatePackage = (clientId: string) => {
+    paletteForm.cancelEdit()
+    void syncPlan({ packages: editor.duplicatePackage(clientId) })
   }
 
-  const handleStartRename = () => {
-    setRenameDraft(editor.name)
-    setRenameError(null)
-    setIsRenaming(true)
+  const handleRemovePackage = (clientId: string) => {
+    paletteForm.cancelEdit()
+    void syncPlan({ packages: editor.removePackage(clientId) })
   }
 
-  const handleRename = async () => {
-    const nextName = renameDraft.trim()
-    if (!nextName) {
-      setRenameError('Le nom du projet est requis.')
-      return
-    }
-    const savedProjectId = await saveProject(nextName)
-    if (!savedProjectId) return
-    setIsRenaming(false)
-    setRenameError(null)
-    navigate(projectStepPath(savedProjectId, currentStep), { replace: true })
+  const handleImportPackages = (lines: PackageLineInput[]) => {
+    paletteForm.cancelEdit()
+    void syncPlan({ packages: editor.addPackages(lines) })
   }
 
   const handleCreate = () => {
@@ -281,41 +418,32 @@ export function EditorPage() {
     if (id === routeProjectId) navigate('/', { replace: true })
   }
 
-  const handleCalculate = useCallback(async (): Promise<boolean> => {
-    const request = editor.buildOptimizeRequest(containerTypes, selectedPallet)
-    if (!request) return false
-    lastCalculatedSignature.current = optimizationSignature
-    optimization.setResult(null)
+  const handleSave = async () => {
     const projectId = await saveProject()
-    if (!projectId) return false
-    return Boolean(await optimization.run(projectId, request))
-  }, [
-    containerTypes,
-    editor,
-    optimization,
-    optimizationSignature,
-    saveProject,
-    selectedPallet,
-  ])
+    if (projectId && routeProjectId === NEW_PROJECT_ID) {
+      navigate(projectStepPath(projectId, currentStep), { replace: true })
+    }
+    void refreshAdvice()
+  }
 
-  // Keep the displayed pallets in sync with edits made at step 2. A short
-  // debounce avoids sending a request for every keystroke in a numeric field.
-  useEffect(() => {
-    calculateRef.current = handleCalculate
-  }, [handleCalculate])
+  const handleStartRename = () => {
+    setRenameDraft(editor.name)
+    setRenameError(null)
+    setIsRenaming(true)
+  }
 
-  useEffect(() => {
-    if (currentStep !== 2 || !isReadyToCalculate) return
-    if (lastCalculatedSignature.current === optimizationSignature) return
-
-    setResult(null)
-    const timer = window.setTimeout(() => {
-      lastCalculatedSignature.current = optimizationSignature
-      void calculateRef.current()
-    }, 350)
-
-    return () => window.clearTimeout(timer)
-  }, [currentStep, isReadyToCalculate, optimizationSignature, setResult])
+  const handleRename = async () => {
+    const nextName = renameDraft.trim()
+    if (!nextName) {
+      setRenameError(t('errors.projectNameRequired'))
+      return
+    }
+    const savedProjectId = await saveProject(nextName)
+    if (!savedProjectId) return
+    setIsRenaming(false)
+    setRenameError(null)
+    navigate(projectStepPath(savedProjectId, currentStep), { replace: true })
+  }
 
   const handleStepChange = async (step: WorkflowStepNumber) => {
     if (step === 3 && !optimization.result) return
@@ -325,12 +453,15 @@ export function EditorPage() {
       routeProjectId && routeProjectId !== NEW_PROJECT_ID
         ? routeProjectId
         : editor.projectId
-    if (!projectId) projectId = await saveProject()
-    if (projectId) navigate(projectStepPath(projectId, step))
+    if (!projectId) {
+      projectId = await saveProject()
+      if (!projectId) return
+    }
+    navigate(projectStepPath(projectId, step))
   }
 
   const handleStepOneNext = async () => {
-    if (!isConfigured) return
+    if (packageCount === 0) return
     const projectId = await saveProject()
     if (projectId) navigate(projectStepPath(projectId, 2))
   }
@@ -340,7 +471,9 @@ export function EditorPage() {
       if (editor.projectId) navigate(projectStepPath(editor.projectId, 3))
       return
     }
-    await handleCalculate()
+    if (await handleCalculate(true)) {
+      if (editor.projectId) navigate(projectStepPath(editor.projectId, 3))
+    }
   }
 
   if (!isWorkflowRoute) {
@@ -357,23 +490,20 @@ export function EditorPage() {
     )
   }
 
-  if (isRouteLoading) {
-    return (
-      <main className="route-feedback" aria-live="polite">
-        <p className="workspace-header__eyebrow">Ouverture du projet</p>
-        <h1>Chargement du plan de chargement…</h1>
-      </main>
-    )
-  }
-
   if (routeError) {
     return (
       <main className="route-feedback">
-        <p className="workspace-header__eyebrow">URL indisponible</p>
-        <h1>Projet non disponible</h1>
+        <p className="workspace-header__eyebrow">
+          {t('editor.unavailableEyebrow')}
+        </p>
+        <h1>{t('editor.unavailableTitle')}</h1>
         <p>{routeError}</p>
-        <Button variant="primary" onClick={() => navigate('/', { replace: true })}>
-          Revenir aux projets
+        <Button
+          variant="primary"
+          icon="arrow-left-outline"
+          onClick={() => navigate('/', { replace: true })}
+        >
+          {t('editor.backToProjects')}
         </Button>
       </main>
     )
@@ -381,7 +511,10 @@ export function EditorPage() {
 
   return (
     <div className="editor">
-      <aside className="sidebar" aria-label={`Outils de l’étape ${currentStep}`}>
+      <aside
+        className="sidebar"
+        aria-label={t('editor.toolsAriaLabel', { step: currentStep })}
+      >
         <div className="sidebar__brand">
           <span className="sidebar__mark" aria-hidden="true">
             <span />
@@ -389,87 +522,80 @@ export function EditorPage() {
             <span />
           </span>
           <div>
-            <p className="sidebar__eyebrow">Logistique</p>
+            <p className="sidebar__eyebrow">{t('home.eyebrow')}</p>
             <p className="sidebar__title">{editor.name}</p>
           </div>
         </div>
         <Button
           variant="ghost"
           className="sidebar__back"
+          icon="arrow-left-outline"
           onClick={handleBackToProjects}
         >
-          ← Tous les projets
+          {t('editor.allProjects')}
         </Button>
         <p className="sidebar__intro">
           {currentStep === 1
-            ? 'Choisissez les deux éléments qui cadrent le calcul.'
+            ? t('editor.railIntro1')
             : currentStep === 2
-              ? 'Ajoutez les colis à répartir sur les palettes sélectionnées.'
-              : 'La configuration est verrouillée pour contrôler le chargement final.'}
+              ? t('editor.railIntro2')
+              : t('editor.railIntro3')}
         </p>
 
         {currentStep === 1 ? (
           <>
-            <ContainerSelector
-              containerTypes={containerTypes}
-              value={editor.containerValue}
-              onChange={editor.setContainerValue}
-              customDims={editor.customDims}
-              onCustomDimChange={editor.setCustomDim}
-            />
-            <PalletSelector
-              palletTypes={paletteTypes}
-              value={effectivePalletId}
-              onChange={editor.setPalletTypeId}
-            />
-          </>
-        ) : currentStep === 2 ? (
-          <>
-            <ConfigurationSummary
-              containerName={containerName}
-              container={sceneContainer}
-              pallet={selectedPalletType}
-              palletLabel={isImportedProject ? 'Palettes importées' : undefined}
-              step={currentStep}
-            />
             <PaletteForm
               values={paletteForm.values}
               errors={paletteForm.errors}
+              editingId={paletteForm.editingId}
               setField={paletteForm.setField}
               submit={paletteForm.submit}
+              cancelEdit={paletteForm.cancelEdit}
+              onDelete={handleRemovePackage}
+            />
+            <PackageImportButton
+              onImported={handleImportPackages}
+              disabled={editor.isSaving || optimization.isOptimizing}
             />
           </>
         ) : (
           <ConfigurationSummary
-            containerName={containerName}
-            container={sceneContainer}
-            pallet={selectedPalletType}
-            palletLabel={isImportedProject ? 'Palettes importées' : undefined}
+            containers={editor.containers}
+            containerTypes={containerTypes}
+            palletTypes={paletteTypes}
+            packageCount={packageCount}
             step={currentStep}
           />
         )}
       </aside>
 
-      <main className="workspace">
+      <main className="workspace" ref={workspaceRef}>
         <header className="workspace-header workflow-header">
           <div>
-            <p className="workspace-header__eyebrow">Étape {currentStep} sur 3</p>
-            <h1>{STEP_COPY[currentStep].title}</h1>
+            <p className="workspace-header__eyebrow">
+              {t('editor.stepOf', { step: currentStep })}
+            </p>
+            <h1>{t(STEP_KEYS[currentStep].title)}</h1>
             <p className="workspace-header__description">
-              {STEP_COPY[currentStep].description}
+              {t(STEP_KEYS[currentStep].description)}
             </p>
           </div>
           <div className="workflow-header__actions">
             <Button
               variant="secondary"
+              icon="save-outline"
               onClick={handleSave}
               disabled={editor.isSaving}
             >
-              {editor.isSaving ? 'Enregistrement…' : 'Enregistrer'}
+              {editor.isSaving ? t('common.saving') : t('common.save')}
             </Button>
             {!isRenaming ? (
-              <Button variant="ghost" onClick={handleStartRename}>
-                Renommer
+              <Button
+                variant="ghost"
+                icon="edit-outline"
+                onClick={handleStartRename}
+              >
+                {t('common.rename')}
               </Button>
             ) : null}
             <div
@@ -482,17 +608,24 @@ export function EditorPage() {
             >
               <span className="project-status__dot" aria-hidden="true" />
               {isReadyToCalculate
-                ? `Prêt · ${packageCount} ${isImportedProject ? 'palettes importées' : 'colis'}`
-                : 'À compléter'}
+                ? t('common.projectStatusReady', {
+                    count: packageCount,
+                    unit: t('units.packages', { count: packageCount }),
+                  })
+                : t('common.projectStatusIncomplete')}
             </div>
+            <AppControls />
           </div>
         </header>
 
         {isRenaming ? (
-          <section className="workflow-rename" aria-label="Renommer le projet">
+          <section
+            className="workflow-rename"
+            aria-label={t('editor.renameAriaLabel')}
+          >
             <Input
               id="project-rename"
-              label="Nom du projet"
+              label={t('editor.renameLabel')}
               value={renameDraft}
               onChange={(value) => {
                 setRenameDraft(value)
@@ -506,7 +639,7 @@ export function EditorPage() {
                 onClick={() => void handleRename()}
                 disabled={editor.isSaving}
               >
-                {editor.isSaving ? 'Enregistrement…' : 'Valider le nom'}
+                {editor.isSaving ? t('common.saving') : t('editor.renameConfirm')}
               </Button>
               <Button
                 variant="ghost"
@@ -516,7 +649,7 @@ export function EditorPage() {
                 }}
                 disabled={editor.isSaving}
               >
-                Annuler
+                {t('common.cancel')}
               </Button>
             </div>
             {renameError ? (
@@ -529,11 +662,11 @@ export function EditorPage() {
 
         <WorkflowSteps
           currentStep={currentStep}
-          hasConfiguration={isConfigured}
+          hasPackages={packageCount > 0}
+          hasContainers={hasContainers}
           packageCount={packageCount}
-          palletCount={generatedPalletCount}
+          containerCount={editor.containers.length}
           hasResult={Boolean(optimization.result)}
-          isImported={isImportedProject}
           onStepChange={(step) => void handleStepChange(step)}
         />
 
@@ -543,177 +676,195 @@ export function EditorPage() {
           </p>
         ) : null}
 
+        {/* Étape 1 — le lot de colis à expédier. */}
         {currentStep === 1 ? (
-          <section className="configuration-panel" aria-labelledby="configuration-title">
-            <div className="panel-heading">
-              <div>
-                <p className="panel-heading__eyebrow">Étape 1 · Préparation</p>
-                <h2 id="configuration-title">Cadre de l&apos;optimisation</h2>
-              </div>
-              <span className="panel-heading__meta">Configuration requise</span>
-            </div>
-            <Input
-              id="project-name"
-              label="Nom du projet"
-              value={editor.name}
-              onChange={editor.setName}
+          <section className="palettes-panel" aria-labelledby="packages-title">
+            <PanelHeading
+              icon="box-outline"
+              eyebrow={t('packages.panelEyebrow')}
+              title={t('packages.panelTitle')}
+              titleId="packages-title"
+              meta={t('packages.meta', {
+                packages: packageCount,
+                lines: packageLineCount,
+                lineWord: t('packages.lineWord', { count: packageLineCount }),
+              })}
             />
-            <div className="configuration-guide">
-              <article>
-                <span aria-hidden="true">1</span>
-                <div>
-                  <h3>Conteneur</h3>
-                  <p>
-                    Sélectionnez un modèle existant ou renseignez un conteneur
-                    personnalisé dans le volet latéral.
-                  </p>
-                </div>
-              </article>
-              <article>
-                <span aria-hidden="true">2</span>
-                <div>
-                  <h3>Palette</h3>
-                  <p>
-                    Choisissez le format de palette qui recevra les colis à
-                    l&apos;étape suivante.
-                  </p>
-                </div>
-              </article>
-            </div>
-            <div className="configuration-status-grid">
-              <div>
-                <span>Conteneur</span>
-                <strong>{containerName}</strong>
-              </div>
-              <div>
-                <span>Palette</span>
-                <strong>{selectedPalletType?.name ?? 'À sélectionner'}</strong>
-              </div>
-            </div>
+            <PaletteTable
+              packages={editor.packages}
+              editingId={paletteForm.editingId}
+              onEdit={(clientId) => {
+                const found = editor.packages.find(
+                  (item) => item.clientId === clientId,
+                )
+                if (found) paletteForm.beginEdit(found)
+              }}
+              onDuplicate={handleDuplicatePackage}
+            />
           </section>
         ) : null}
 
+        {/* Les conteneurs qui recevront le lot. */}
         {currentStep === 2 ? (
-          <>
-            <section className="palettes-panel" aria-labelledby="packages-title">
-              <div className="panel-heading">
-                <div>
-                  <p className="panel-heading__eyebrow">Étape 2 · Chargement</p>
-                  <h2 id="packages-title">Colis à charger sur les palettes</h2>
-                </div>
-                <span className="panel-heading__meta">
-                  {packageCount} colis · {packageLineCount} référence
-                  {packageLineCount > 1 ? 's' : ''}
-                </span>
-              </div>
-              <PaletteTable
-                palettes={editor.palettes}
-                onUpdate={editor.updatePalette}
-                onDuplicate={editor.duplicatePalette}
-                onRemove={editor.removePalette}
-              />
-            </section>
-
-            <section
-              className="palletization-panel"
-              aria-labelledby="palletization-title"
-            >
-              <div className="panel-heading">
-                <div>
-                  <p className="panel-heading__eyebrow">
-                    Étape 2 · Prévisualisation 3D
-                  </p>
-                  <h2 id="palletization-title">Toutes les palettes chargées</h2>
-                </div>
-                <span className="panel-heading__meta">
-                  {generatedPalletCount} palette
-                  {generatedPalletCount > 1 ? 's' : ''}
-                </span>
-              </div>
-              <div className="palletization-viewport">
-                {optimization.isOptimizing ? (
-                  <p className="muted" role="status">
-                    Mise à jour automatique de la répartition…
-                  </p>
-                ) : optimization.result?.pallets.length ? (
-                  <PalletizationScene pallets={optimization.result.pallets} />
-                ) : (
-                  <p className="muted">
-                    Ajoutez les colis puis utilisez le bouton en bas de page
-                    pour générer leur répartition sur chaque palette.
-                  </p>
-                )}
-              </div>
-            </section>
-          </>
+          <section className="configuration-panel" aria-labelledby="containers-title">
+            <PanelHeading
+              icon="container-outline"
+              eyebrow={t('containers.eyebrow')}
+              title={t('containers.title')}
+              titleId="containers-title"
+              meta={t('containers.count', {
+                count: editor.containers.length,
+              })}
+            />
+            <ContainerList
+              containers={editor.containers}
+              containerTypes={containerTypes}
+              palletTypes={paletteTypes}
+              advice={advice}
+              onAdd={() => void handleAddContainer()}
+              onRemove={(clientId) => void handleRemoveContainer(clientId)}
+              onChange={(clientId, patch) =>
+                void syncPlan({
+                  containers: editor.updateContainer(clientId, patch),
+                })
+              }
+              onCustomDimChange={(clientId, field, value) =>
+                void syncPlan({
+                  containers: editor.setContainerCustomDim(
+                    clientId,
+                    field,
+                    value,
+                  ),
+                })
+              }
+            />
+            {hasContainers && !everyContainerHasPallet ? (
+              <p className="field-error" role="alert">
+                {t('containers.palletRequired')}
+              </p>
+            ) : null}
+          </section>
         ) : null}
 
-        {currentStep === 3 ? (
+        {/* Étape 3 — le plan, conteneur par conteneur. */}
+        {currentStep === 3 && optimization.result ? (
           <section className="final-placement" aria-labelledby="scene-title">
+            <LoadingPlan
+              result={optimization.result}
+              containers={editor.containers}
+              containerTypes={containerTypes}
+              palletTypes={paletteTypes}
+              advice={advice}
+              selectedPosition={inspectedLoad?.position ?? 1}
+              onSelect={setInspectedPosition}
+              /* Un conteneur de plus, rempli dans le même geste. */
+              onAddContainer={() => void handleAddContainer()}
+              /* Retirer ou retailler un conteneur depuis le plan : le geste
+                 se fait là où l'on voit son effet, et le plan se refait. */
+              onRemoveContainer={(clientId) =>
+                void handleRemoveContainer(clientId)
+              }
+              fleetNotice={fleetNotice}
+              onChangeContainer={(clientId, patch) =>
+                void syncPlan({
+                  containers: editor.updateContainer(clientId, patch),
+                })
+              }
+              onCustomDimChange={(clientId, field, value) =>
+                void syncPlan({
+                  containers: editor.setContainerCustomDim(
+                    clientId,
+                    field,
+                    value,
+                  ),
+                })
+              }
+              palletBlockage={palletBlockage}
+              onUsePallet={(palletTypeId) =>
+                void handleUsePallet(palletTypeId)
+              }
+              dockIsStuck={dockIsStuck}
+              onChangeSizes={() => void handleStepChange(2)}
+            />
+
             <section className="scene-panel" aria-labelledby="scene-title">
-              <div className="panel-heading">
-                <div>
-                  <p className="panel-heading__eyebrow">
-                    Étape 3 · Implantation finale
-                  </p>
-                  <h2 id="scene-title">Palettes dans le conteneur</h2>
-                </div>
-                <span className="panel-heading__meta">
-                  {generatedPalletCount} palette
-                  {generatedPalletCount > 1 ? 's' : ''}{' '}
-                  {isImportedProject ? 'importée' : 'générée'}
-                  {generatedPalletCount > 1 ? 's' : ''}
-                </span>
-              </div>
-              <div className="viewport viewport--final">
+              <PanelHeading
+                icon="expand-outline"
+                eyebrow={t('placement.eyebrow')}
+                title={
+                  inspectedLoad?.container.name ?? t('container.customName')
+                }
+                titleId="scene-title"
+                meta={t('placement.metaPosition', {
+                  position: inspectedLoad?.position ?? 1,
+                  total: optimization.result.containers.length,
+                })}
+              />
+              <div
+                className={
+                  optimization.isOptimizing
+                    ? 'viewport viewport--final is-busy'
+                    : 'viewport viewport--final'
+                }
+              >
                 {optimization.isOptimizing ? (
                   <p className="muted" role="status">
-                    Mise à jour de l&apos;implantation finale…
+                    {t('placement.updating')}
                   </p>
-                ) : sceneContainer ? (
+                ) : inspectedLoad ? (
                   <Scene
-                    container={sceneContainer}
-                    placements={optimization.result?.placements ?? []}
-                    pallets={optimization.result?.pallets ?? []}
-                    fallbackPallets={editor.palettes.flatMap((pallet) =>
-                      pallet.persistedId
-                        ? [
-                            {
-                              id: pallet.persistedId,
-                              label: pallet.label,
-                              weight_kg: pallet.weight_kg,
-                            },
-                          ]
-                        : [],
-                    )}
+                    container={inspectedLoad.container}
+                    placements={inspectedLoad.placements}
+                    pallets={inspectedLoad.pallets}
                   />
                 ) : (
-                  <p className="muted">
-                    Revenez à l&apos;étape 1 pour sélectionner un conteneur.
-                  </p>
+                  <p className="muted">{t('placement.noContainer')}</p>
                 )}
               </div>
             </section>
+
+            {inspectedLoad && inspectedLoad.pallets.length > 0 ? (
+              <section
+                className="palletization-panel"
+                aria-labelledby="palletization-title"
+              >
+                <PanelHeading
+                  icon="layers-outline"
+                  eyebrow={t('palletization.eyebrow')}
+                  title={t('palletization.title')}
+                  titleId="palletization-title"
+                  meta={t('palletization.meta', {
+                    count: inspectedLoad.pallets.length,
+                  })}
+                />
+                <div className="palletization-viewport">
+                  <PalletizationScene pallets={inspectedLoad.pallets} />
+                </div>
+              </section>
+            ) : null}
 
             <ResultsPanel
               result={optimization.result}
+              load={inspectedLoad}
               isOptimizing={optimization.isOptimizing}
               error={optimization.error}
-              isImported={isImportedProject}
-              onRecalculate={() => void handleCalculate()}
             />
           </section>
         ) : null}
 
-        <footer className="step-navigation" aria-label="Navigation entre les étapes">
+        <footer
+          className="step-navigation"
+          aria-label={t('editor.stepNavigation')}
+        >
           {currentStep > 1 ? (
             <Button
               variant="secondary"
+              icon="arrow-left-outline"
               onClick={() =>
                 void handleStepChange((currentStep - 1) as WorkflowStepNumber)
               }
             >
-              ← Étape précédente
+              {t('common.previousStep')}
             </Button>
           ) : (
             <span />
@@ -722,28 +873,38 @@ export function EditorPage() {
           {currentStep === 1 ? (
             <Button
               variant="primary"
+              iconAfter="arrow-right-outline"
               onClick={() => void handleStepOneNext()}
-              disabled={!isConfigured || editor.isSaving}
+              disabled={packageCount === 0 || editor.isSaving}
             >
-              Suivant : charger les colis →
+              {t('editor.nextChooseContainers')}
             </Button>
           ) : null}
           {currentStep === 2 ? (
             <Button
               variant="primary"
+              iconAfter={
+                optimization.result && !optimization.isOptimizing
+                  ? 'arrow-right-outline'
+                  : undefined
+              }
               onClick={() => void handleStepTwoAction()}
               disabled={!isReadyToCalculate || optimization.isOptimizing}
             >
               {optimization.isOptimizing
-                ? 'Calcul de la répartition…'
+                ? t('editor.calculating')
                 : optimization.result
-                  ? 'Suivant : placer les palettes →'
-                  : 'Calculer la répartition'}
+                  ? t('editor.nextSeePlan')
+                  : t('editor.calculate')}
             </Button>
           ) : null}
           {currentStep === 3 ? (
-            <Button variant="primary" onClick={handleBackToProjects}>
-              Terminer et revenir aux projets
+            <Button
+              variant="secondary"
+              icon="check-outline"
+              onClick={handleBackToProjects}
+            >
+              {t('editor.finish')}
             </Button>
           ) : null}
         </footer>

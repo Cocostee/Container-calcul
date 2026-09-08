@@ -1,4 +1,4 @@
-import type { PaletteInstanceInput } from '../types/palette.types'
+import type { PackageLineInput } from '../types/palette.types'
 
 const REQUIRED_HEADERS = [
   'CDEXENT',
@@ -24,7 +24,7 @@ export interface ImportedShipment {
   orderCode: string
   palletType: string
   palletCount: number
-  pallets: PaletteInstanceInput[]
+  pallets: PackageLineInput[]
   ignoredRows: number
 }
 
@@ -96,7 +96,7 @@ function parseCsv(text: string): string[][] {
 }
 
 async function readXlsx(file: File): Promise<string[][]> {
-  // Keep the spreadsheet parser outside the initial 3D application bundle.
+  // Le lecteur de tableur reste hors du paquet initial, déjà lourd de 3D.
   const { default: ExcelJS } = await import('exceljs')
   const workbook = new ExcelJS.Workbook()
   await workbook.xlsx.load(await file.arrayBuffer())
@@ -146,15 +146,15 @@ function validDimension(value: number | null): value is number {
 function normalizeWeightKg(value: string): number {
   const parsed = parseNumber(value)
   if (parsed === null || parsed <= 0) return 0
-  // Source files mix grams and already-normalised kilograms. Values above
-  // 2.5 tonnes are safely interpreted as grams; lower values stay in kg.
+  // Les fichiers mélangent les grammes et les kilos déjà convertis. Au-delà de
+  // 2,5 tonnes, c'est nécessairement des grammes ; en dessous, des kilos.
   return parsed > 2500 ? Math.round((parsed / 1000) * 100) / 100 : parsed
 }
 
 function allocateProfiles(
   profiles: PalletProfile[],
   palletCount: number,
-): PaletteInstanceInput[] {
+): PackageLineInput[] {
   const totalOccurrences = profiles.reduce(
     (total, profile) => total + profile.occurrences,
     0,
@@ -179,7 +179,10 @@ function allocateProfiles(
       ? [
           {
             palette_type_id: null,
-            label: `Palette importée · ${profile.length_cm} × ${profile.width_cm} × ${profile.height_cm} cm`,
+            // Les cotes ont leur colonne dans le tableau : les répéter dans
+            // le libellé n'ajoutait rien et le rendait illisible. Le code de
+            // commande, posé par l'appelant, suffit à nommer la charge.
+            label: 'Colis',
             length_cm: profile.length_cm,
             width_cm: profile.width_cm,
             height_cm: profile.height_cm,

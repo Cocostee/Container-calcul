@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { z } from 'zod'
 
-import type { PaletteInstanceInput } from '../types/palette.types'
+import type {
+  PackageDraft,
+  PackageLineInput,
+} from '../types/palette.types'
 import { DEFAULT_PACKAGE_FORM } from '../utils/constants'
 
-// Validation for the "add package" form (kept in the hook, not the component).
+// La validation du formulaire de colis vit dans le hook, pas dans la vue.
 const paletteFormSchema = z.object({
   label: z.string().min(1, 'Label requis'),
   palette_type_id: z.string().nullable(),
@@ -26,16 +29,49 @@ const EMPTY_FORM: PaletteFormValues = {
   ...DEFAULT_PACKAGE_FORM,
 }
 
-// Drives the add-package form; calls onAdd with a valid package line on submit.
-export function usePaletteForm(onAdd: (values: PaletteInstanceInput) => void) {
+/**
+ * Pilote le formulaire du rail latéral, qui sert à deux choses : ajouter un
+ * colis, ou modifier celui choisi dans le tableau. `editingId` dit lequel des
+ * deux, et c'est la seule différence — les champs et la validation sont les
+ * mêmes, et deux formulaires auraient fini par diverger.
+ */
+export function usePaletteForm(
+  onAdd: (values: PackageLineInput) => void,
+  onUpdate: (clientId: string, patch: Partial<PackageLineInput>) => void,
+) {
   const [values, setValues] = useState<PaletteFormValues>(EMPTY_FORM)
   const [errors, setErrors] = useState<PaletteFormErrors>({})
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const setField = <K extends keyof PaletteFormValues>(
     name: K,
     value: PaletteFormValues[K],
   ) => {
     setValues((prev) => ({ ...prev, [name]: value }))
+  }
+
+  /** Charge une ligne du tableau dans le formulaire. */
+  const beginEdit = (item: PackageDraft) => {
+    setValues({
+      label: item.label,
+      palette_type_id: item.palette_type_id ?? null,
+      length_cm: item.length_cm,
+      width_cm: item.width_cm,
+      height_cm: item.height_cm,
+      weight_kg: item.weight_kg,
+      quantity: item.quantity,
+      stackable: item.stackable,
+      rotatable: item.rotatable,
+    })
+    setErrors({})
+    setEditingId(item.clientId)
+  }
+
+  /** Abandonne la modification et rend le formulaire à l'ajout. */
+  const cancelEdit = () => {
+    setValues(EMPTY_FORM)
+    setErrors({})
+    setEditingId(null)
   }
 
   const submit = () => {
@@ -50,9 +86,14 @@ export function usePaletteForm(onAdd: (values: PaletteInstanceInput) => void) {
       return
     }
     setErrors({})
-    onAdd(parsed.data)
+    if (editingId) {
+      onUpdate(editingId, parsed.data)
+      setEditingId(null)
+    } else {
+      onAdd(parsed.data)
+    }
     setValues(EMPTY_FORM)
   }
 
-  return { values, errors, setField, submit }
+  return { values, errors, editingId, setField, submit, beginEdit, cancelEdit }
 }

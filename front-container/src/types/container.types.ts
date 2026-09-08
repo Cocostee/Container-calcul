@@ -1,4 +1,4 @@
-// Shared container types, aligned with the API container schemas.
+// Types de conteneur partagés, alignés sur les schémas de l'API.
 
 export interface ContainerType {
   id: string
@@ -16,7 +16,7 @@ export interface ContainerCustomDims {
   max_weight_kg: number
 }
 
-// Selection made in the sidebar: either a reference type id or custom dims.
+// Le choix fait dans le rail : un identifiant de référence, ou des cotes libres.
 export interface ContainerConfig {
   container_type_id: string | null
   container_custom_dims: ContainerCustomDims | null

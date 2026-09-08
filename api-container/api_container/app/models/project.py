@@ -1,16 +1,20 @@
 """Model - Project (a saved loading project)."""
 import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, Uuid, func
+from sqlalchemy import DateTime, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from api_container.config.database import Base
 
 
 class Project(Base):
-    """A container loading project: one container + its pallets."""
+    """A loading project: a batch of packages and the containers to load.
+
+    The container sizes and pallet formats live on ``ProjectContainer``, one
+    row per container: a project is a shipment, not a single container.
+    """
 
     __tablename__ = "projects"
 
@@ -25,20 +29,18 @@ class Project(Base):
         onupdate=func.now(),
         nullable=False,
     )
-    container_type_id: Mapped[Optional[str]] = mapped_column(
-        String, ForeignKey("container_types.id"), nullable=True
-    )
-    # Selected pallet type used for the package-to-pallet stage.
-    pallet_type_id: Mapped[Optional[str]] = mapped_column(
-        String, ForeignKey("palette_types.id"), nullable=True
-    )
-    # Populated only when the container is "custom" (free dimensions).
-    container_custom_dims: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
-    palettes: Mapped[List["PaletteInstance"]] = relationship(
+    # The packages to ship. They belong to the project, not to a container:
+    # the computation is what spreads them across containers.
+    packages: Mapped[List["PackageLine"]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
-        order_by="PaletteInstance.label",
+        order_by="PackageLine.label",
+    )
+    containers: Mapped[List["ProjectContainer"]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+        order_by="ProjectContainer.position",
     )
     results: Mapped[List["PlacementResult"]] = relationship(
         back_populates="project",

@@ -1,55 +1,72 @@
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { PanelHeading } from '../components/PanelHeading'
+import { SizeChooser } from '../components/SizeChooser'
+import { Button } from '../components/ui/Button/Button'
+import { Icon } from '../components/ui/Icon'
+import { Input } from '../components/ui/Input/Input'
 import {
+  adviseSizes,
   createProject,
-  optimizeImportedPallets,
+  optimize,
+  updateProject,
 } from '../api/projects.api'
 import { useContainerTypes } from '../hooks/useContainerTypes'
+import { usePaletteTypes } from '../hooks/usePaletteTypes'
+import { useTranslation } from '../i18n'
 import { projectStepPath } from '../router/workflowRoutes'
-import type { OptimizePaletteInput } from '../types/placement.types'
-import type { PaletteInstance } from '../types/palette.types'
-import type { ProjectPayload } from '../types/project.types'
-import {
-  parseCesiImport,
-  type CesiImportPreview,
-} from '../utils/cesiImport'
-import { Button } from '../components/ui/Button/Button'
-import { Input } from '../components/ui/Input/Input'
+import type { PackageLineInput } from '../types/palette.types'
+import type {
+  OptimizePaletteInput,
+  SizeAdvice,
+} from '../types/placement.types'
+import { parseCesiImport, type CesiImportPreview } from '../utils/cesiImport'
 
-interface ImportResult {
+/** Les trois temps de l'assistant. */
+type Stage = 'file' | 'sizes' | 'done'
+
+interface ImportOutcome {
   id: string
   name: string
   palletCount: number
+  containerCount: number
   unplacedCount: number
 }
 
-function containerVolume(
-  container: { length_cm: number; width_cm: number; height_cm: number },
-): number {
-  return container.length_cm * container.width_cm * container.height_cm
-}
-
-function importPallets(
-  pallets: PaletteInstance[],
+/** Une ligne de colis devient une entrée de requête de calcul. */
+function toOptimizeInput(
+  lines: PackageLineInput[],
 ): OptimizePaletteInput[] {
-  return pallets.map((pallet, index) => ({
-    instance_id: `imported-${pallet.id || `pallet-${index}`}`,
-    length_cm: pallet.length_cm,
-    width_cm: pallet.width_cm,
-    height_cm: pallet.height_cm,
-    weight_kg: pallet.weight_kg,
-    quantity: pallet.quantity,
-    stackable: pallet.stackable,
-    rotatable: pallet.rotatable,
+  return lines.map((line, index) => ({
+    instance_id: `imported-${index}`,
+    length_cm: line.length_cm,
+    width_cm: line.width_cm,
+    height_cm: line.height_cm,
+    weight_kg: line.weight_kg,
+    quantity: line.quantity,
+    stackable: line.stackable,
+    rotatable: line.rotatable,
   }))
 }
 
-/** Import a source file into ready-to-open, already optimized projects. */
+/**
+ * Import d'un plan de chargement, en trois temps : le fichier, les tailles,
+ * le projet.
+ *
+ * Tout le fichier forme **un seul projet** : les commandes qu'il contient
+ * deviennent le lot commun, que le calcul répartit sur autant de conteneurs
+ * qu'il en faut. Le code de commande reste dans le libellé de chaque charge
+ * pour ne pas perdre la trace de son origine.
+ */
 export function ImportPlanPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { containerTypes, loading: containersLoading } = useContainerTypes()
+  const { paletteTypes } = usePaletteTypes()
+
+  const [stage, setStage] = useState<Stage>('file')
   const [projectName, setProjectName] = useState('')
   const [selectedFileName, setSelectedFileName] = useState('')
   const [preview, setPreview] = useState<CesiImportPreview | null>(null)
@@ -57,33 +74,79 @@ export function ImportPlanPage() {
   const [isParsing, setIsParsing] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [progress, setProgress] = useState('')
-  const [results, setResults] = useState<ImportResult[]>([])
+  const [outcome, setOutcome] = useState<ImportOutcome | null>(null)
 
-  const automaticContainer = useMemo(
-    () =>
-      containerTypes.reduce<typeof containerTypes[number] | null>(
-        (largest, container) =>
-          !largest || containerVolume(container) > containerVolume(largest)
-            ? container
-            : largest,
-        null,
-      ),
-    [containerTypes],
+  const [containerTypeId, setContainerTypeId] = useState<string | null>(null)
+  const [palletTypeId, setPalletTypeId] = useState<string | null>(null)
+  const [advice, setAdvice] = useState<SizeAdvice | null>(null)
+  const [adviceToken, setAdviceToken] = useState(0)
+
+  /** Toutes les charges du fichier, en un seul lot. */
+  const packages = useMemo<PackageLineInput[]>(() => {
+    if (!preview) return []
+    return preview.shipments.flatMap((shipment) =>
+      shipment.pallets.map((pallet) => ({
+        ...pallet,
+        // Le code de commande nomme la charge : c'est la seule chose que le
+        // fichier apporte et que les autres colonnes ne disent pas.
+        label: shipment.orderCode,
+      })),
+    )
+  }, [preview])
+
+  const totalPallets = useMemo(
+    () => packages.reduce((total, line) => total + line.quantity, 0),
+    [packages],
   )
-  const totalPallets = preview?.shipments.reduce(
-    (total, shipment) => total + shipment.palletCount,
-    0,
-  )
+
+  // Les suggestions se recalculent quand la palette change : c'est elle qui
+  // détermine combien de conteneurs seront nécessaires.
+  useEffect(() => {
+    if (stage !== 'sizes' || packages.length === 0) return
+    let cancelled = false
+
+    void adviseSizes(toOptimizeInput(packages), palletTypeId)
+      .then((next) => {
+        if (cancelled) return
+        setAdvice(next)
+        // Au premier passage, on adopte les tailles suggérées. Le format de
+        // palette d'abord : c'est lui qui détermine le nombre de conteneurs,
+        // et son adoption relance donc ce calcul une fois.
+        setPalletTypeId((current) => {
+          if (current) return current
+          const best = next.pallets.find((entry) => entry.recommended)
+          return best?.pallet_type_id ?? paletteTypes[0]?.id ?? null
+        })
+        setContainerTypeId((current) => {
+          if (current) return current
+          const best = next.containers.find((entry) => entry.recommended)
+          return best?.container_type_id ?? containerTypes[0]?.id ?? null
+        })
+      })
+      .catch(() => {
+        if (!cancelled) setAdvice(null)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [stage, packages, palletTypeId, adviceToken, containerTypes, paletteTypes])
 
   const handleFile = async (file: File | undefined) => {
     if (!file) return
     setError(null)
-    setResults([])
+    setOutcome(null)
     setPreview(null)
     setSelectedFileName(file.name)
     setIsParsing(true)
     try {
-      setPreview(await parseCesiImport(file))
+      const parsed = await parseCesiImport(file)
+      setPreview(parsed)
+      setProjectName((current) =>
+        current.trim() ? current : file.name.replace(/\.[^.]+$/, ''),
+      )
+      setStage('sizes')
+      setAdviceToken((value) => value + 1)
     } catch (caught) {
       setSelectedFileName('')
       setError((caught as Error).message)
@@ -92,91 +155,157 @@ export function ImportPlanPage() {
     }
   }
 
-  const handleImport = async () => {
+  const handleImport = useCallback(async () => {
     const name = projectName.trim()
     if (!name) {
-      setError('Donnez un nom au projet avant de lancer l’import.')
+      setError(t('import.nameRequired'))
       return
     }
-    if (!preview || !automaticContainer) return
+    if (packages.length === 0 || !containerTypeId) return
 
     setError(null)
-    setResults([])
     setIsImporting(true)
-    const imported: ImportResult[] = []
+    setProgress(t('wizard.creating'))
 
     try {
-      for (const [index, shipment] of preview.shipments.entries()) {
-        setProgress(
-          `Préparation de la commande ${index + 1} sur ${preview.shipments.length}…`,
-        )
-        const projectTitle =
-          preview.shipments.length === 1
-            ? name
-            : `${name} · ${shipment.orderCode}`
-        const payload: ProjectPayload = {
-          name: projectTitle,
-          container_type_id: automaticContainer.id,
-          pallet_type_id: null,
-          container_custom_dims: null,
-          palettes: shipment.pallets,
-        }
-        const project = await createProject(payload)
-        const result = await optimizeImportedPallets(
-          project.id,
-          automaticContainer,
-          importPallets(project.palettes),
-        )
-        imported.push({
-          id: project.id,
-          name: project.name,
-          palletCount: shipment.palletCount,
-          unplacedCount: result.unplaced_count,
-        })
-        setResults([...imported])
+      // Un seul projet, un seul conteneur déclaré : le calcul ajoutera les
+      // suivants jusqu'à ce que tout soit embarqué. Revenir sur les tailles
+      // remplace le projet déjà créé pour ce fichier au lieu d'en créer un
+      // second : un fichier, un projet.
+      const payload = {
+        name,
+        packages,
+        containers: [
+          {
+            container_type_id: containerTypeId,
+            container_custom_dims: null,
+            pallet_type_id: palletTypeId,
+          },
+        ],
       }
-      setProgress('Import terminé : les projets sont prêts à être contrôlés.')
+      const project = outcome
+        ? await updateProject(outcome.id, payload)
+        : await createProject(payload)
+
+      setProgress(t('wizard.loading'))
+      const container = containerTypes.find(
+        (type) => type.id === containerTypeId,
+      )
+      const pallet = paletteTypes.find((type) => type.id === palletTypeId)
+      if (!container) throw new Error(t('import.noContainerAvailable'))
+
+      const result = await optimize(project.id, {
+        packages: project.packages.map((line, index) => ({
+          instance_id: String(line.id ?? index),
+          length_cm: line.length_cm,
+          width_cm: line.width_cm,
+          height_cm: line.height_cm,
+          weight_kg: line.weight_kg,
+          quantity: line.quantity,
+          stackable: line.stackable,
+          rotatable: line.rotatable,
+        })),
+        containers: project.containers.map((entry) => ({
+          id: entry.id,
+          container: {
+            name: container.name,
+            length_cm: container.length_cm,
+            width_cm: container.width_cm,
+            height_cm: container.height_cm,
+            max_weight_kg: container.max_weight_kg,
+          },
+          pallet: pallet
+            ? {
+                id: pallet.id,
+                label: pallet.name,
+                length_cm: pallet.length_cm,
+                width_cm: pallet.width_cm,
+                base_height_cm: pallet.height_cm,
+                max_load_height_cm: pallet.default_load_height_cm,
+                max_weight_kg: pallet.max_weight_kg,
+              }
+            : null,
+        })),
+        auto_extend: true,
+      })
+
+      setOutcome({
+        id: project.id,
+        name: project.name,
+        palletCount: totalPallets,
+        containerCount: result.containers.length,
+        unplacedCount: result.unplaced_package_count,
+      })
+      setProgress('')
+      setStage('done')
     } catch (caught) {
       setError(
-        `${(caught as Error).message} Les projets déjà préparés restent disponibles dans la liste.`,
+        t('import.importFailed', { message: (caught as Error).message }),
       )
+      setProgress('')
     } finally {
       setIsImporting(false)
     }
+  }, [
+    containerTypeId,
+    containerTypes,
+    outcome,
+    packages,
+    paletteTypes,
+    palletTypeId,
+    projectName,
+    t,
+    totalPallets,
+  ])
+
+  /*
+   * Changer une taille après validation ramène à l'étape des tailles : le
+   * projet existe déjà, il sera mis à jour plutôt que dupliqué.
+   */
+  const handleContainerChange = (id: string) => {
+    setContainerTypeId(id)
+    if (stage === 'done') setStage('sizes')
+  }
+
+  const handlePalletChange = (id: string) => {
+    setPalletTypeId(id)
+    if (stage === 'done') setStage('sizes')
   }
 
   return (
     <main className="import-plan">
       <header className="import-plan__header">
         <div>
-          <p className="workspace-header__eyebrow">Import de plan de chargement</p>
-          <h1>Préparer les palettes depuis un fichier</h1>
-          <p>
-            Importez un CSV ou un XLSX : les palettes fiables sont lues,
-            positionnées automatiquement dans le plus grand conteneur disponible,
-            puis prêtes à être visualisées en 3D.
-          </p>
+          <p className="workspace-header__eyebrow">{t('import.eyebrow')}</p>
+          <h1>{t('import.title')}</h1>
+          <p>{t('import.intro')}</p>
         </div>
-        <Button variant="ghost" onClick={() => navigate('/')} disabled={isImporting}>
-          ← Tous les projets
+        <Button
+          variant="ghost"
+          icon="arrow-left-outline"
+          onClick={() => navigate('/')}
+          disabled={isImporting}
+        >
+          {t('editor.allProjects')}
         </Button>
       </header>
 
+      {/* 1 — le fichier */}
       <section className="import-plan__card" aria-labelledby="import-source-title">
-        <div className="panel-heading">
-          <div>
-            <p className="panel-heading__eyebrow">Source</p>
-            <h2 id="import-source-title">Un fichier, un nom de projet</h2>
-          </div>
-          <span className="panel-heading__meta">CSV ou XLSX</span>
-        </div>
+        <PanelHeading
+          icon="file-upload-outline"
+          eyebrow={t('wizard.step1')}
+          title={t('import.sourceTitle')}
+          titleId="import-source-title"
+          meta={t('import.fileFormats')}
+        />
 
         <div className="import-plan__fields">
           <Input
             id="import-project-name"
-            label="Nom de base du projet"
+            label={t('import.projectNameLabel')}
             value={projectName}
-            placeholder="Ex. Arrivage CESI juillet"
+            placeholder={t('import.projectNamePlaceholder')}
             onChange={(value) => {
               setProjectName(value)
               setError(null)
@@ -185,7 +314,7 @@ export function ImportPlanPage() {
           />
           <div className="import-file-field">
             <span className="ui-label" id="import-file-label">
-              Fichier source
+              {t('import.fileLabel')}
             </span>
             <input
               ref={fileInputRef}
@@ -199,31 +328,40 @@ export function ImportPlanPage() {
             />
             <Button
               variant="secondary"
+              icon="file-text"
               onClick={() => fileInputRef.current?.click()}
               disabled={isParsing || isImporting}
             >
-              {isParsing ? 'Lecture du fichier…' : 'Choisir un fichier'}
+              {isParsing ? t('import.readingFile') : t('import.chooseFile')}
             </Button>
             <span className="import-file-field__name" aria-live="polite">
-              {selectedFileName || 'Aucun fichier sélectionné'}
+              {selectedFileName || t('import.noFile')}
             </span>
           </div>
         </div>
 
-        {automaticContainer ? (
+        {preview ? (
           <p className="import-plan__container">
-            Conteneur retenu automatiquement : <strong>{automaticContainer.name}</strong>
-            {' · '}
-            {automaticContainer.length_cm} × {automaticContainer.width_cm} ×{' '}
-            {automaticContainer.height_cm} cm
+            <Icon name="check-solid" size="sm" tone="primary" />
+            {t('wizard.fileRead', {
+              orders: preview.shipments.length,
+              pallets: totalPallets,
+            })}
           </p>
-        ) : containersLoading ? (
-          <p className="muted">Chargement des conteneurs disponibles…</p>
-        ) : (
-          <p className="field-error" role="alert">
-            Aucun conteneur de référence n’est disponible.
+        ) : null}
+
+        {preview && (preview.ignoredRows > 0 || preview.ignoredOrders > 0) ? (
+          <p className="import-plan__note">
+            {t('import.ignored', {
+              rows: preview.ignoredRows,
+              rowWord: t('import.rowWord', { count: preview.ignoredRows }),
+              orders: preview.ignoredOrders,
+              orderWord: t('import.orderWord', {
+                count: preview.ignoredOrders,
+              }),
+            })}
           </p>
-        )}
+        ) : null}
 
         {error ? (
           <p className="field-error" role="alert">
@@ -232,47 +370,55 @@ export function ImportPlanPage() {
         ) : null}
       </section>
 
-      {preview ? (
-        <section className="import-plan__card" aria-labelledby="import-preview-title">
-          <div className="panel-heading">
-            <div>
-              <p className="panel-heading__eyebrow">Contrôle avant import</p>
-              <h2 id="import-preview-title">{preview.shipments.length} commande{preview.shipments.length > 1 ? 's' : ''} prête{preview.shipments.length > 1 ? 's' : ''}</h2>
+      {/* 2 — les tailles, avec leurs suggestions */}
+      {stage !== 'file' ? (
+        <section className="import-plan__card" aria-labelledby="import-sizes-title">
+          <PanelHeading
+            icon="container-outline"
+            eyebrow={t('wizard.step2')}
+            title={t('wizard.sizesTitle')}
+            titleId="import-sizes-title"
+            meta={
+              advice
+                ? t('wizard.forPallets', { count: totalPallets })
+                : t('common.loading')
+            }
+          />
+
+          {containersLoading ? (
+            <p className="muted">{t('import.loadingContainers')}</p>
+          ) : (
+            <SizeChooser
+              advice={advice}
+              containerTypes={containerTypes}
+              palletTypes={paletteTypes}
+              containerTypeId={containerTypeId}
+              palletTypeId={palletTypeId}
+              onContainerChange={handleContainerChange}
+              onPalletChange={handlePalletChange}
+              disabled={isImporting}
+            />
+          )}
+
+          {stage === 'sizes' ? (
+            <div className="import-plan__submit">
+              <p>
+                {outcome ? t('wizard.updateHelp') : t('wizard.submitHelp')}
+              </p>
+              <Button
+                variant="primary"
+                icon="check-solid"
+                onClick={() => void handleImport()}
+                disabled={isImporting || !containerTypeId || !palletTypeId}
+              >
+                {isImporting
+                  ? t('import.submitting')
+                  : outcome
+                    ? t('wizard.update')
+                    : t('wizard.validate')}
+              </Button>
             </div>
-            <span className="panel-heading__meta">{totalPallets} palettes</span>
-          </div>
-
-          <ul className="import-preview-list">
-            {preview.shipments.map((shipment) => (
-              <li key={shipment.orderCode}>
-                <div>
-                  <strong>{shipment.orderCode}</strong>
-                  <span>{shipment.palletType}</span>
-                </div>
-                <span>{shipment.palletCount} palettes</span>
-              </li>
-            ))}
-          </ul>
-          {preview.ignoredRows > 0 || preview.ignoredOrders > 0 ? (
-            <p className="import-plan__note">
-              {preview.ignoredRows} ligne{preview.ignoredRows > 1 ? 's' : ''}{' '}
-              aux dimensions inexploitables et {preview.ignoredOrders} commande
-              {preview.ignoredOrders > 1 ? 's' : ''} sans palette fiable ont été écartées.
-            </p>
           ) : null}
-
-          <div className="import-plan__submit">
-            <p>
-              Chaque commande deviendra un projet prêt à ouvrir à l’étape 3.
-            </p>
-            <Button
-              variant="primary"
-              onClick={() => void handleImport()}
-              disabled={isImporting || !automaticContainer || !projectName.trim()}
-            >
-              {isImporting ? 'Préparation des projets…' : 'Créer les projets et optimiser'}
-            </Button>
-          </div>
         </section>
       ) : null}
 
@@ -282,32 +428,64 @@ export function ImportPlanPage() {
         </p>
       ) : null}
 
-      {results.length > 0 ? (
-        <section className="import-plan__card" aria-labelledby="import-results-title">
-          <div className="panel-heading">
+      {/* 3 — le projet, prêt à ouvrir */}
+      {stage === 'done' && outcome ? (
+        <section className="import-plan__card" aria-labelledby="import-result-title">
+          <PanelHeading
+            icon="check-solid"
+            eyebrow={t('wizard.step3')}
+            title={t('wizard.readyTitle')}
+            titleId="import-result-title"
+            meta={t('containers.count', { count: outcome.containerCount })}
+          />
+
+          <div className="import-outcome">
+            <span className="import-outcome__figure">
+              {outcome.containerCount}
+            </span>
             <div>
-              <p className="panel-heading__eyebrow">Résultat</p>
-              <h2 id="import-results-title">Projets préparés</h2>
-            </div>
-            <span className="panel-heading__meta">{results.length} créé{results.length > 1 ? 's' : ''}</span>
-          </div>
-          <ul className="import-results-list">
-            {results.map((result) => (
-              <li key={result.id}>
-                <div>
-                  <strong>{result.name}</strong>
-                  <span>
-                    {result.palletCount} palettes · {result.unplacedCount === 0
-                      ? 'toutes placées'
-                      : `${result.unplacedCount} non placée${result.unplacedCount > 1 ? 's' : ''}`}
-                  </span>
+              <strong>{outcome.name}</strong>
+              <p className="muted">
+                {t('wizard.readyDetail', {
+                  count: outcome.palletCount,
+                  containers: t('containers.count', {
+                    count: outcome.containerCount,
+                  }),
+                })}
+              </p>
+              {outcome.unplacedCount > 0 ? (
+                <div className="import-outcome__leftover" role="alert">
+                  <p className="field-error">
+                    {t('plan.leftOver', { count: outcome.unplacedCount })}
+                  </p>
+                  <p className="muted">{t('wizard.leftOverTitle')}</p>
+                  <Button
+                    variant="secondary"
+                    icon="arrow-left-outline"
+                    onClick={() => setStage('sizes')}
+                  >
+                    {t('wizard.leftOverAction')}
+                  </Button>
                 </div>
-                <Button variant="secondary" onClick={() => navigate(projectStepPath(result.id, 3))}>
-                  Ouvrir la vue 3D
-                </Button>
-              </li>
-            ))}
-          </ul>
+              ) : null}
+            </div>
+            <div className="import-outcome__actions">
+              <Button
+                variant="secondary"
+                icon="edit-outline"
+                onClick={() => setStage('sizes')}
+              >
+                {t('wizard.changeSizes')}
+              </Button>
+              <Button
+                variant="primary"
+                iconAfter="arrow-right-outline"
+                onClick={() => navigate(projectStepPath(outcome.id, 3))}
+              >
+                {t('import.openProject')}
+              </Button>
+            </div>
+          </div>
         </section>
       ) : null}
     </main>

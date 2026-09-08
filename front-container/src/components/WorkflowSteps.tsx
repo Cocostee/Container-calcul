@@ -1,12 +1,21 @@
+import Step from '@mui/material/Step'
+import StepButton from '@mui/material/StepButton'
+import Stepper from '@mui/material/Stepper'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
+
+import { useTranslation } from '../i18n'
+import { Icon } from './ui/Icon'
+
 export type WorkflowStepNumber = 1 | 2 | 3
 
 interface WorkflowStepsProps {
   currentStep: WorkflowStepNumber
-  hasConfiguration: boolean
+  hasPackages: boolean
+  hasContainers: boolean
   packageCount: number
-  palletCount: number
+  containerCount: number
   hasResult: boolean
-  isImported: boolean
   onStepChange: (step: WorkflowStepNumber) => void
 }
 
@@ -17,76 +26,110 @@ interface WorkflowStep {
   complete: boolean
 }
 
-/** A concise, keyboard-accessible overview of the loading workflow. */
+interface StepMarkerProps {
+  index: number
+  complete: boolean
+  current: boolean
+}
+
+/** Jalon : le numéro tant que l'étape reste à faire, une coche ensuite. */
+function StepMarker({ index, complete, current }: StepMarkerProps) {
+  return (
+    <span
+      className={[
+        'workflow-marker',
+        complete ? 'workflow-marker--complete' : '',
+        current ? 'workflow-marker--current' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      aria-hidden="true"
+    >
+      {complete ? <Icon name="check-outline" size="sm" /> : index}
+    </span>
+  )
+}
+
+/**
+ * Fil du chargement : trois jalons reliés par une ligne qui se remplit.
+ *
+ * L'orientation suit la largeur disponible — horizontale sur grand écran,
+ * verticale dès que les libellés ne tiennent plus côte à côte. C'est le
+ * Stepper de MUI qui gère l'enchaînement et les états ; l'apparence vient
+ * entièrement du thème.
+ */
 export function WorkflowSteps({
   currentStep,
-  hasConfiguration,
+  hasPackages,
+  hasContainers,
   packageCount,
-  palletCount,
+  containerCount,
   hasResult,
-  isImported,
   onStepChange,
 }: WorkflowStepsProps) {
+  const theme = useTheme()
+  const { t } = useTranslation()
+  const isCompact = useMediaQuery(theme.breakpoints.down('md'))
+
   const steps: WorkflowStep[] = [
     {
       id: 1,
-      title: 'Configurer',
-      detail: 'Conteneur et palette',
-      complete: hasConfiguration,
+      title: t('steps.step1Title'),
+      detail:
+        packageCount > 0
+          ? t('steps.step1DetailPackages', { count: packageCount })
+          : t('steps.step1Detail'),
+      complete: hasPackages,
     },
     {
       id: 2,
-      title: 'Charger les palettes',
-      detail:
-        packageCount > 0
-          ? isImported
-            ? `${packageCount} palettes importées`
-            : `${packageCount} colis`
-          : 'Ajouter les colis',
-      complete: hasResult && palletCount > 0,
+      title: t('steps.step2Title'),
+      detail: hasContainers
+        ? t('steps.step2DetailContainers', { count: containerCount })
+        : t('steps.step2Detail'),
+      complete: hasContainers,
     },
     {
       id: 3,
-      title: 'Placer dans le conteneur',
+      title: t('steps.step3Title'),
       detail: hasResult
-        ? `${palletCount} palette${palletCount > 1 ? 's' : ''}`
-        : 'Après le calcul',
+        ? t('steps.step3DetailPlan', { count: containerCount })
+        : t('steps.step3Detail'),
       complete: hasResult,
     },
   ]
 
   return (
-    <nav className="workflow-steps" aria-label="Fil d’Ariane des étapes">
-      <ol>
-        {steps.map((step) => {
+    <nav className="workflow-steps" aria-label={t('steps.ariaLabel')}>
+      <Stepper
+        nonLinear
+        activeStep={currentStep - 1}
+        orientation={isCompact ? 'vertical' : 'horizontal'}
+        alternativeLabel={!isCompact}
+      >
+        {steps.map((step, index) => {
           const isCurrent = currentStep === step.id
           return (
-            <li
-              key={step.id}
-              className={`workflow-step${isCurrent ? ' workflow-step--current' : ''}${
-                step.complete ? ' workflow-step--complete' : ''
-              }`}
-            >
-              <button
-                type="button"
-                aria-current={isCurrent ? 'step' : undefined}
-                disabled={step.id === 3 && !hasResult}
+            <Step key={step.id} completed={step.complete}>
+              <StepButton
                 onClick={() => onStepChange(step.id)}
+                disabled={step.id === 3 && !hasResult}
+                aria-current={isCurrent ? 'step' : undefined}
+                icon={
+                  <StepMarker
+                    index={index + 1}
+                    complete={step.complete}
+                    current={isCurrent}
+                  />
+                }
               >
-                <span className="workflow-step__number" aria-hidden="true">
-                  {step.complete ? '✓' : step.id}
-                </span>
-                <span>
-                  <strong>
-                    Étape {step.id} · {step.title}
-                  </strong>
-                  <small>{step.detail}</small>
-                </span>
-              </button>
-            </li>
+                <strong>{step.title}</strong>
+                <small>{step.detail}</small>
+              </StepButton>
+            </Step>
           )
         })}
-      </ol>
+      </Stepper>
     </nav>
   )
 }

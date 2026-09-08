@@ -1,3 +1,5 @@
+import FormControlLabel from '@mui/material/FormControlLabel'
+import MuiCheckbox from '@mui/material/Checkbox'
 import { useId } from 'react'
 
 import type { CheckboxProps } from './Checkbox.types'
@@ -14,15 +16,20 @@ export function Checkbox({
   const checkboxId = id ?? generatedId
 
   return (
-    <label className={`ui-checkbox ${className}`.trim()} htmlFor={checkboxId}>
-      <input
-        id={checkboxId}
-        type="checkbox"
-        checked={checked}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.checked)}
-      />
-      <span>{label}</span>
-    </label>
+    <FormControlLabel
+      className={`ui-checkbox ${className}`.trim()}
+      htmlFor={checkboxId}
+      disabled={disabled}
+      control={
+        <MuiCheckbox
+          id={checkboxId}
+          checked={checked}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.checked)}
+          size="small"
+        />
+      }
+      label={<span>{label}</span>}
+    />
   )
 }

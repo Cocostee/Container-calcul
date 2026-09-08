@@ -8,8 +8,8 @@ export const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Normalise the structured API error body into a plain Error message so hooks
-// can surface it without knowing the transport shape.
+// Ramène le corps d'erreur structuré de l'API à un simple Error, pour que les
+// hooks puissent le remonter sans rien savoir du transport.
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {

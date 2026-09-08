@@ -1,10 +1,107 @@
+/* ==========================================================================
+   PAGES ET PANNEAUX — « Quai au petit matin »
+
+   Trois niveaux de profondeur :
+     le fond        lumière froide et marquage au sol (base.css)
+     le verre       rail, panneaux, barres — blancs, translucides
+     le hublot      les vues 3D, seules zones sombres de l'écran
+
+   Les coins sont de simples arrondis, portés par `border-radius` : le bloc
+   peint lui-même son verre, sa bordure et son ombre, sans couche
+   intermédiaire.
+   ========================================================================== */
+
+/* ======================================================================
+   FORMES — socle commun des blocs de verre
+   ====================================================================== */
+.project-home__content,
+.import-plan__card,
+.project-card,
+.scene-panel,
+.palettes-panel,
+.palletization-panel,
+.configuration-panel,
+.results-panel,
+.project-bar,
+.workflow-steps,
+.workflow-rename,
+.sidebar-section {
+  position: relative;
+  background: var(--glass);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-panel);
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+/* ======================================================================
+   MARQUE
+   Trois blocs dans un cadre : une palette debout, deux colis empilés.
+   ====================================================================== */
+.sidebar__mark {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 3px;
+  width: 36px;
+  height: 36px;
+  padding: 5px;
+  background: linear-gradient(160deg, var(--accent-hover), var(--accent));
+  border-radius: var(--radius-chip);
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar__mark span {
+  display: block;
+  background: var(--on-accent);
+  border-radius: 1.5px;
+}
+
+.sidebar__mark span:first-child {
+  grid-row: span 2;
+}
+
+.sidebar__mark span:last-child {
+  opacity: 0.55;
+}
+
+/* ======================================================================
+   MARQUAGES — le petit texte au-dessus d'un titre
+   Une barre peinte plutôt que des capitales tracées.
+   ====================================================================== */
+.sidebar__eyebrow,
+.workspace-header__eyebrow,
+.panel-heading__eyebrow,
+.sidebar-section__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+  color: var(--accent-text);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.sidebar__eyebrow::before,
+.workspace-header__eyebrow::before,
+.panel-heading__eyebrow::before,
+.sidebar-section__eyebrow::before {
+  flex: 0 0 auto;
+  width: 3px;
+  height: 0.85em;
+  content: '';
+  background: var(--accent);
+  border-radius: var(--radius-mark);
+}
+
+/* ======================================================================
+   SOCLE DE PAGE
+   ====================================================================== */
 .editor {
   display: grid;
-  grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+  grid-template-columns: var(--rail-width) minmax(0, 1fr);
+  align-items: start;
   min-height: 100dvh;
-  background:
-    radial-gradient(circle at 88% 4%, rgba(0, 107, 104, 0.08), transparent 22rem),
-    var(--color-bg);
 }
 
 .route-feedback {
@@ -12,83 +109,141 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: var(--space-3);
-  width: min(100% - 40px, 720px);
+  gap: var(--space-4);
+  width: min(100% - 40px, 680px);
   min-height: 100dvh;
   margin: 0 auto;
 }
 
 .route-feedback > p:not(.workspace-header__eyebrow) {
+  max-width: var(--measure);
   color: var(--color-muted);
 }
 
-/* ---- Project home: this is intentionally a full page with no sidebar ---- */
+/* ======================================================================
+   LANGUE ET THÈME
+   ====================================================================== */
+.app-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Dans une barre d'outils, les réglages se placent au bout, séparés des
+   actions qui portent sur le document. */
+.workflow-header__actions .app-controls,
+.project-home__actions .app-controls {
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--border);
+}
+
+.app-controls__locale {
+  width: 168px;
+}
+
+.app-controls__theme {
+  min-width: var(--control-row);
+}
+
+.app-controls__locale-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* ======================================================================
+   ACCUEIL — page pleine, sans rail
+   ====================================================================== */
 .project-home {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  width: min(100% - 40px, 1040px);
+  gap: var(--space-6);
+  width: min(100% - 48px, var(--content-max));
   min-height: 100dvh;
-  padding: clamp(32px, 6vw, 76px) 0;
+  padding: clamp(36px, 6vw, 80px) 0 var(--space-7);
   margin: 0 auto;
+  animation: enter-rise var(--dur-reveal) var(--ease-out) both;
 }
 
 .project-home__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-5);
-}
-
-.project-home__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--space-2);
+  gap: var(--space-6);
 }
 
 .project-home__brand {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .project-home__brand .sidebar__mark {
   flex: 0 0 auto;
-  margin-top: 4px;
+  width: 46px;
+  height: 46px;
+  margin-top: 6px;
+}
+
+.project-home__brand h1 {
+  font-size: var(--text-2xl);
 }
 
 .project-home__brand p:last-child {
-  max-width: 590px;
-  margin-top: var(--space-2);
+  max-width: var(--measure);
+  margin-top: var(--space-3);
   color: var(--color-muted);
 }
 
+.project-home__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
 .project-home__content {
-  padding: clamp(20px, 4vw, 36px);
-  background: rgba(255, 255, 255, 0.91);
-  border: 1px solid rgba(120, 120, 108, 0.25);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  padding: clamp(22px, 3.4vw, 38px);
+  border-radius: var(--radius-shell);
+  box-shadow: var(--shadow-lg);
 }
 
 .project-home__list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
   gap: var(--space-3);
   padding: 0;
   margin: 0;
   list-style: none;
 }
 
+/* Une carte projet est une plaque : bande de marquage en tête, nom gravé. */
 .project-card {
   display: flex;
   align-items: stretch;
   min-width: 0;
   overflow: hidden;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  background:
+    linear-gradient(var(--border-strong), var(--border-strong)) top / 100% 3px
+      no-repeat,
+    var(--surface);
+  backdrop-filter: none;
+  transition:
+    background var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+
+.project-card:hover {
+  background:
+    linear-gradient(var(--accent), var(--accent)) top / 100% 3px no-repeat,
+    var(--surface);
+  border-color: var(--primary-line);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
 }
 
 .project-card__open {
@@ -96,27 +251,33 @@
   flex: 1;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
-  min-height: 142px;
-  padding: var(--space-4);
+  gap: 4px;
+  min-height: 148px;
+  padding: var(--space-5) var(--space-4) var(--space-4);
   text-align: left;
+  white-space: normal;
 }
 
 .project-card__name {
   overflow: hidden;
   max-width: 100%;
   color: var(--color-text);
-  font-size: 1rem;
-  font-weight: 780;
+  font-family: var(--font-family-display);
+  font-size: var(--text-md);
+  font-stretch: var(--font-display-width);
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .project-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin-top: auto;
-  color: var(--color-primary-hover);
-  font-size: 0.84rem;
-  font-weight: 750;
+  color: var(--primary-text);
+  font-size: var(--text-xs);
+  font-weight: 650;
 }
 
 .project-home__empty {
@@ -124,51 +285,56 @@
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-3);
-  max-width: 560px;
-  padding: var(--space-6) 0 var(--space-2);
+  max-width: var(--measure-narrow);
+  padding: var(--space-6) 0 var(--space-3);
+}
+
+.project-home__empty h3 {
+  font-size: var(--text-lg);
 }
 
 .project-home__empty p {
   color: var(--color-muted);
 }
 
-/* ---- Import: a focused, sidebar-free preparation flow ---- */
+/* ======================================================================
+   IMPORT — un couloir étroit, une décision à la fois
+   ====================================================================== */
 .import-plan {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  width: min(100% - 40px, 920px);
+  width: min(100% - 48px, 940px);
   min-height: 100dvh;
-  padding: clamp(32px, 6vw, 76px) 0;
+  padding: clamp(36px, 6vw, 80px) 0 var(--space-7);
   margin: 0 auto;
+  animation: enter-rise var(--dur-reveal) var(--ease-out) both;
 }
 
 .import-plan__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-5);
+  margin-bottom: var(--space-2);
 }
 
 .import-plan__header > div > p:last-child {
-  max-width: 700px;
-  margin-top: var(--space-2);
+  max-width: var(--measure);
+  margin-top: var(--space-3);
   color: var(--color-muted);
 }
 
 .import-plan__card {
-  padding: clamp(20px, 4vw, 34px);
-  background: rgba(255, 255, 255, 0.91);
-  border: 1px solid rgba(120, 120, 108, 0.25);
-  border-radius: var(--radius-lg);
+  padding: clamp(20px, 3vw, 34px);
   box-shadow: var(--shadow-sm);
 }
 
 .import-plan__fields {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) minmax(220px, 0.8fr);
-  gap: var(--space-4);
   align-items: end;
+  gap: var(--space-4);
 }
 
 .import-file-field {
@@ -180,6 +346,9 @@
 
 .import-file-field .ui-label {
   flex-basis: 100%;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
 }
 
 .import-file-field__input {
@@ -195,27 +364,42 @@
 .import-file-field__name {
   min-width: 0;
   color: var(--color-muted);
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   overflow-wrap: anywhere;
 }
 
+/* Les encarts d'information partagent la même barre peinte à gauche. */
 .import-plan__container,
 .import-plan__note,
 .import-plan__progress {
   margin-top: var(--space-4);
-  padding: var(--space-3);
-  color: var(--color-primary-hover);
-  font-size: 0.9rem;
-  background: var(--color-primary-soft);
-  border-left: 3px solid var(--color-primary);
-  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  background: var(--primary-soft);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+}
+
+.import-plan__container strong {
+  color: var(--primary-text);
+}
+
+.import-plan__note {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
+}
+
+.import-plan__progress {
+  margin: 0;
 }
 
 .import-preview-list,
 .import-results-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 6px;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -228,22 +412,23 @@
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
 }
 
 .import-preview-list li > div,
 .import-results-list li > div {
   display: flex;
   flex-direction: column;
-  min-width: 0;
   gap: 2px;
+  min-width: 0;
 }
 
 .import-preview-list strong,
 .import-results-list strong {
   overflow: hidden;
+  font-size: var(--text-base);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -251,13 +436,15 @@
 .import-preview-list span,
 .import-results-list span {
   color: var(--color-muted);
-  font-size: 0.84rem;
+  font-size: var(--text-xs);
 }
 
-.import-plan__note {
-  color: #795b15;
-  background: #fff4d6;
-  border-color: #d3a52a;
+.import-preview-list li > span:last-child,
+.import-results-list li > span:last-child {
+  flex: 0 0 auto;
+  color: var(--primary-text);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
 }
 
 .import-plan__submit {
@@ -265,90 +452,59 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  margin-top: var(--space-4);
+  margin-top: var(--space-5);
   padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--border);
 }
 
 .import-plan__submit p {
+  max-width: var(--measure);
   color: var(--color-muted);
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
 }
 
-.import-plan__progress {
-  margin: 0;
-}
-
-/* ---- Sidebar: preparation remains visible without overwhelming the page ---- */
+/* ======================================================================
+   RAIL DE PRÉPARATION
+   ====================================================================== */
 .sidebar {
+  position: sticky;
+  top: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding: 28px 20px;
+  gap: var(--space-3);
+  height: 100dvh;
+  padding: var(--space-5) var(--space-4) var(--space-6);
   overflow-y: auto;
-  background: #e0e5e8;
-  border-right: 1px solid #c9d1d5;
+  background: var(--glass-strong);
+  border-right: 1px solid var(--border);
+  backdrop-filter: blur(var(--glass-blur));
+  animation: enter-slide var(--dur-reveal) var(--ease-out) both;
 }
 
 .sidebar__brand {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: 0 var(--space-2);
-}
-
-.sidebar__mark {
-  display: grid;
-  grid-template-columns: repeat(2, 9px);
-  grid-template-rows: repeat(2, 9px);
-  gap: 3px;
-  width: 30px;
-  height: 30px;
-  padding: 4px;
-  background: var(--color-primary);
-  border-radius: 9px;
-  box-shadow: 0 5px 12px rgba(0, 107, 104, 0.22);
-}
-
-.sidebar__mark span {
-  display: block;
-  background: #fff;
-  border-radius: 2px;
-}
-
-.sidebar__mark span:first-child {
-  grid-row: span 2;
-}
-
-.sidebar__eyebrow,
-.workspace-header__eyebrow,
-.panel-heading__eyebrow {
-  color: var(--color-primary);
-  font-size: 0.72rem;
-  font-weight: 750;
-  letter-spacing: 0.11em;
-  line-height: 1.2;
-  text-transform: uppercase;
+  padding: 0 var(--space-2) var(--space-1);
 }
 
 .sidebar__title {
+  overflow: hidden;
   color: var(--color-text);
-  font-weight: 760;
-  letter-spacing: -0.02em;
+  font-family: var(--font-family-display);
+  font-size: var(--text-base);
+  font-stretch: var(--font-display-width);
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebar__intro {
-  padding: 0 var(--space-2);
-  color: var(--color-muted);
-  font-size: 0.875rem;
-}
-
-.sidebar__back {
-  align-self: flex-start;
-  min-height: 36px;
-  padding: 5px var(--space-2);
-  color: var(--color-primary-hover);
-  font-size: 0.84rem;
+  max-width: var(--measure-narrow);
+  padding: 0 var(--space-2) var(--space-1);
+  color: var(--color-faint);
+  font-size: var(--text-sm);
 }
 
 .sidebar-section {
@@ -356,11 +512,8 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4);
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(120, 120, 108, 0.25);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
+
 
 .sidebar-section--projects {
   gap: var(--space-2);
@@ -379,37 +532,225 @@
   gap: var(--space-3);
 }
 
-/* ---- Main workspace ---- */
+/* Fiche technique de la palette : des mesures, donc des chiffres alignés. */
+.pallet-specs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+}
+
+.pallet-specs div {
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-chip);
+}
+
+.pallet-specs div:last-child {
+  grid-column: 1 / -1;
+}
+
+.pallet-specs dt {
+  color: var(--color-faint);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+}
+
+.pallet-specs dd {
+  margin: 2px 0 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 650;
+}
+
+/* ======================================================================
+   LISTE DE PROJETS DU RAIL
+   ====================================================================== */
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.project-list__item {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  border-radius: var(--radius-control);
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.project-list__item:hover {
+  background: var(--glass-faint);
+}
+
+.project-list__item--active {
+  background: var(--primary-soft);
+}
+
+.project-list__select {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  min-height: 46px;
+  padding: 6px var(--space-3);
+  text-align: left;
+  white-space: normal;
+}
+
+.project-list__name {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: var(--text-sm);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-list__delete {
+  flex: 0 0 var(--control-row);
+  min-width: var(--control-row);
+  min-height: var(--control-row);
+  padding: 0;
+}
+
+.project-list__delete:hover {
+  color: var(--danger-text);
+  background: var(--danger-soft);
+}
+
+/* ======================================================================
+   ESPACE DE TRAVAIL
+   ====================================================================== */
 .workspace {
+  --workspace-pad: clamp(20px, 2.6vw, 40px);
+
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   min-width: 0;
-  padding: clamp(20px, 3vw, 40px);
-  overflow: auto;
+  height: 100dvh;
+  /* Aucun retrait en bas : la barre de navigation, collante, l'occupe. */
+  padding: 0 var(--workspace-pad);
+  overflow-y: auto;
 }
 
+/* Le bandeau de titre reste accroché : à l'étape 2 la table est longue et
+   l'état du projet doit rester sous les yeux. */
 .workspace-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
-  align-items: flex-start;
+  /* Les actions se centrent sur la hauteur du bloc de titre : accrochées en
+     haut, elles paraissaient posées au-dessus de lui. */
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-5);
-  max-width: 1220px;
+  /* Le verre court jusqu'aux bords du plan de travail, le contenu reste
+     aligné sur celui des panneaux. La largeur reprend explicitement les deux
+     marges négatives : bridée par une `max-width`, la barre s'arrêterait
+     avant le bord droit. */
+  box-sizing: border-box;
+  width: calc(100% + 2 * var(--workspace-pad));
+  padding: var(--space-5) var(--workspace-pad) var(--space-4);
+  margin: 0 calc(-1 * var(--workspace-pad));
+  background: var(--glass-soft);
+  backdrop-filter: blur(18px);
+  animation: enter-rise var(--dur-reveal) var(--ease-out) 70ms both;
 }
 
 .workspace-header__description {
-  max-width: 640px;
+  max-width: var(--measure);
   margin-top: var(--space-2);
   color: var(--color-muted);
+  font-size: var(--text-sm);
 }
 
 .workflow-header__actions {
   display: flex;
   flex: 0 0 auto;
   flex-wrap: wrap;
-  align-items: center;
+  /* `stretch` plutôt que `center` : tous les contrôles d'une même ligne
+     prennent exactement la hauteur de la ligne, quelle que soit leur marge
+     intérieure. L'alignement ne dépend alors plus d'aucune hauteur devinée. */
+  align-items: stretch;
   justify-content: flex-end;
   gap: var(--space-2);
+}
+
+/* Chaque contrôle occupe toute la hauteur de la rangée. `--control-row` n'est
+   qu'un plancher : si un libellé passe à la ligne, la rangée grandit et tous
+   les contrôles grandissent avec elle, sans jamais se décaler. */
+.workflow-header__actions > *,
+.project-home__actions > * {
+  box-sizing: border-box;
+  min-height: var(--control-row);
+  margin: 0;
+}
+
+/* Les réglages sont un groupe dans la rangée : il s'étire, et son contenu
+   s'étire à son tour. */
+.workflow-header__actions .app-controls,
+.project-home__actions .app-controls {
+  align-items: stretch;
+}
+
+.workflow-header__actions .app-controls > *,
+.project-home__actions .app-controls > * {
+  box-sizing: border-box;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+}
+
+/* Le contenu se centre dans la hauteur reçue, au lieu de la dicter. */
+.workflow-header__actions .ui-button,
+.workflow-header__actions .project-status,
+.workflow-header__actions .MuiButtonBase-root,
+.project-home__actions .ui-button,
+.project-home__actions .MuiButtonBase-root {
+  display: inline-flex;
+  align-items: center;
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: 1.1;
+}
+
+.workflow-header__actions .app-controls__theme,
+.project-home__actions .app-controls__theme {
+  flex: 0 0 var(--control-row);
+  width: var(--control-row);
+  padding: 0;
+}
+
+/* Le champ de MUI porte sa propre hauteur de saisie et un `min-height` en em.
+   Les deux cèdent, pour que la saisie remplisse la hauteur de la rangée. */
+.workflow-header__actions .MuiInputBase-root,
+.project-home__actions .MuiInputBase-root {
+  align-items: stretch;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.workflow-header__actions .MuiSelect-select,
+.workflow-header__actions .MuiOutlinedInput-input,
+.project-home__actions .MuiSelect-select,
+.project-home__actions .MuiOutlinedInput-input {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  height: auto;
+  min-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .workflow-rename {
@@ -417,11 +758,12 @@
   flex-wrap: wrap;
   align-items: end;
   gap: var(--space-3);
-  max-width: 1220px;
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  max-width: var(--content-max);
+  padding: var(--space-4);
+}
+
+.workflow-rename::before {
+  background: var(--primary-line);
 }
 
 .workflow-rename .ui-field {
@@ -439,145 +781,145 @@
   flex-basis: 100%;
 }
 
-/* ---- Three-step breadcrumb / workflow navigation ---- */
+/* ======================================================================
+   PISTE D'ÉTAPES
+   Trois jalons reliés par une ligne qui se remplit. La structure et
+   l'orientation viennent du Stepper de MUI ; ici, la peinture.
+   ====================================================================== */
 .workflow-steps {
-  max-width: 1220px;
-  padding: 6px;
-  overflow-x: auto;
-  background: rgba(255, 255, 255, 0.76);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  max-width: var(--content-max);
+  padding: var(--space-6) var(--space-5);
   box-shadow: var(--shadow-sm);
 }
 
-.workflow-steps ol {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-2);
-  min-width: 610px;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.workflow-step {
-  position: relative;
+/* Chaque jalon garde sa colonne : le libellé passe à la ligne au lieu de
+   pousser le bandeau. */
+.workflow-steps .MuiStep-root {
   min-width: 0;
 }
 
-.workflow-step:not(:last-child)::after {
-  display: none;
+.workflow-steps .MuiStepButton-root {
+  padding: var(--space-2);
+  border-radius: var(--radius-control);
+  transition: background-color var(--dur-fast) var(--ease-out);
 }
 
-.workflow-step button {
-  position: relative;
-  z-index: 1;
+.workflow-steps .MuiStepButton-root:hover {
+  background: var(--glass-faint);
+}
+
+/* L'étape en cours se marque au jalon, pas par un cadre autour de sa
+   colonne : son titre passe simplement en ambre. */
+.workflow-steps
+  .MuiStepButton-root[aria-current='step']
+  .MuiStepLabel-labelContainer
+  strong {
+  color: var(--accent-text);
+  font-weight: 750;
+}
+
+.workflow-steps .MuiStepLabel-labelContainer strong {
+  display: block;
+  max-width: 22ch;
+  margin: 0 auto;
+  color: var(--color-text);
+  font-family: var(--font-family-display);
+  font-size: var(--text-base);
+  font-stretch: var(--font-display-width);
+  font-weight: 650;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.workflow-steps .MuiStepLabel-labelContainer small {
+  display: block;
+  max-width: 26ch;
+  margin: 4px auto 0;
+  color: var(--color-faint);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+/* Jalon : creux tant que l'étape reste à faire, plein une fois franchie. */
+.workflow-marker {
   display: grid;
-  width: 100%;
-  grid-template-columns: 42px minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 58px;
-  padding: 8px 10px;
-  color: var(--color-muted);
-  text-align: left;
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid transparent;
-  text-decoration: none;
-  border-radius: 12px;
-}
-
-.workflow-step button:hover:not(:disabled) {
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
-}
-
-.workflow-step__number {
-  display: grid;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   color: var(--color-muted);
-  font-size: 0.85rem;
-  font-weight: 800;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border-strong);
+  font-size: var(--text-md);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--surface-sunken);
+  border: 2px solid var(--border-control);
   border-radius: 50%;
+  transition:
+    color var(--dur-base) var(--ease-out),
+    background var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-spring);
 }
 
-.workflow-step strong,
-.workflow-step small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.workflow-marker--complete {
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
-.workflow-step strong {
-  overflow: visible;
-  color: var(--color-text);
-  font-size: 0.84rem;
-  line-height: 1.18;
-  text-overflow: clip;
-  white-space: normal;
+/* Le jalon de l'étape en cours est le seul rond blanc du bandeau : les
+   franchis sont pleins d'ambre, les suivants creux et gris. Un trait ambré
+   épais et une ombre le détachent du fond. */
+.workflow-marker--current {
+  color: var(--accent-text);
+  background: var(--surface);
+  border: 3px solid var(--accent);
+  box-shadow: var(--shadow-md);
+  transform: scale(1.1);
 }
 
-.workflow-step small {
-  margin-top: 1px;
-  color: var(--color-muted);
-  font-size: 0.74rem;
+/* Franchie et en cours à la fois : le rond reste blanc, la coche prend
+   l'ambre — sans quoi l'étape courante se confondrait avec les précédentes. */
+.workflow-marker--current.workflow-marker--complete {
+  color: var(--accent-text);
+  background: var(--surface);
 }
 
-.workflow-step--current button {
-  background: var(--color-primary-soft);
-  border-color: #9ccfc9;
-  box-shadow: 0 1px 4px rgba(0, 84, 82, 0.08);
-}
-
-.workflow-step--current .workflow-step__number,
-.workflow-step--complete .workflow-step__number {
-  color: #fff;
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.workflow-step--current strong,
-.workflow-step--complete strong {
-  color: var(--color-primary-hover);
-}
-
+/* ======================================================================
+   ÉTAT DU PROJET
+   ====================================================================== */
 .project-status {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 8px;
-  min-height: 32px;
-  margin-top: var(--space-1);
-  padding: 6px 11px;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: 6px var(--space-3);
   color: var(--color-muted);
-  font-size: 0.82rem;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 650;
+  background: var(--glass-faint);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
 }
 
 .project-status--ready {
-  color: #075f39;
-  background: #e8f6ee;
-  border-color: #8ec6a8;
+  color: var(--success-text);
+  background: var(--success-soft);
+  border-color: var(--success-line);
 }
 
 .project-status__dot {
-  width: 8px;
-  height: 8px;
-  background: var(--color-warning);
+  width: 7px;
+  height: 7px;
+  background: var(--color-faint);
   border-radius: 50%;
 }
 
+/* Prêt à calculer : le témoin respire, comme un feu de quai. */
 .project-status--ready .project-status__dot {
-  background: var(--color-success);
+  background: var(--success);
+  animation: beacon 2.4s var(--ease-out) infinite;
 }
 
 .project-bar {
@@ -585,11 +927,8 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-4);
-  max-width: 1220px;
+  max-width: var(--content-max);
   padding: var(--space-4) var(--space-5);
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(120, 120, 108, 0.25);
-  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
 }
 
@@ -604,19 +943,22 @@
   gap: var(--space-2);
 }
 
+/* ======================================================================
+   PANNEAUX
+   ====================================================================== */
 .workspace-overview {
   display: grid;
-  grid-template-columns: minmax(390px, 1.35fr) minmax(290px, 0.65fr);
+  grid-template-columns: minmax(390px, 1.4fr) minmax(300px, 0.6fr);
   align-items: start;
   gap: var(--space-4);
-  max-width: 1220px;
+  max-width: var(--content-max);
 }
 
 .final-placement {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  max-width: 1220px;
+  max-width: var(--content-max);
 }
 
 .scene-panel,
@@ -624,14 +966,32 @@
 .palletization-panel,
 .configuration-panel,
 .results-panel {
-  background: rgba(255, 255, 255, 0.91);
-  border: 1px solid rgba(120, 120, 108, 0.25);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
+  animation: enter-fade var(--dur-base) var(--ease-out) both;
 }
 
-.scene-panel {
+/* Les panneaux qui portent un hublot se serrent autour de lui. */
+.scene-panel,
+.palletization-panel {
+  max-width: var(--content-max);
   padding: var(--space-4);
+}
+
+.palettes-panel {
+  max-width: var(--content-max);
+  padding: clamp(18px, 2.4vw, 28px);
+}
+
+.configuration-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: var(--content-max);
+  padding: clamp(20px, 3vw, 36px);
+}
+
+.configuration-panel > .ui-field {
+  width: min(100%, 460px);
 }
 
 .panel-heading,
@@ -642,69 +1002,129 @@
   gap: var(--space-3);
 }
 
-.panel-heading {
-  margin-bottom: var(--space-3);
+.panel-heading__text,
+.results-panel__title > div {
+  flex: 1;
+  min-width: 0;
 }
 
-.panel-heading__eyebrow {
-  margin-bottom: 3px;
-  color: var(--color-accent);
+.results-panel__title {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* Le signe du panneau : présent, jamais bavard. */
+.panel-heading__glyph {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--accent);
+}
+
+.panel-heading {
+  margin-bottom: var(--space-4);
 }
 
 .panel-heading__meta {
   flex: 0 0 auto;
-  padding: 4px 8px;
+  padding: 5px var(--space-3);
   color: var(--color-muted);
-  font-size: 0.78rem;
-  font-weight: 650;
-  background: var(--color-surface-muted);
-  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-pill);
 }
 
-/* Kept deliberately compact: 3D supports decisions rather than taking over. */
-.viewport {
+/* ======================================================================
+   HUBLOTS — les vues 3D, seule zone sombre en plein jour
+   ====================================================================== */
+.viewport,
+.palletization-viewport {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: clamp(270px, 32vh, 360px);
   overflow: hidden;
-  background:
-    linear-gradient(135deg, rgba(25, 61, 65, 0.22), transparent 60%),
-    #102b2d;
-  border: 1px solid rgba(178, 223, 216, 0.2);
-  border-radius: 13px;
+  background: linear-gradient(
+    180deg,
+    var(--viewport-top),
+    var(--viewport-bottom)
+  );
+  border-radius: calc(var(--radius-panel) - 6px);
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.28);
 }
 
-.viewport .muted {
-  max-width: 250px;
-  padding: var(--space-4);
-  color: #e5f3f1;
-  text-align: center;
+.viewport {
+  height: clamp(280px, 34vh, 380px);
 }
 
-/* The final container deserves the same decision-making space as step 2. */
+/* L'implantation finale mérite la même place que l'étape 2. */
 .viewport--final {
-  height: clamp(310px, 38vh, 430px);
+  height: clamp(340px, 44vh, 500px);
 }
 
-.palettes-panel {
-  max-width: 1220px;
+.palletization-viewport {
+  height: clamp(320px, 40vh, 460px);
+}
+
+.viewport .muted,
+.palletization-viewport > .muted {
+  max-width: 34ch;
   padding: var(--space-5);
+  color: rgba(255, 255, 255, 0.82);
+  text-align: center;
+  text-wrap: balance;
 }
 
-.configuration-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  max-width: 840px;
-  padding: clamp(20px, 4vw, 36px);
+.palletization-scene {
+  position: absolute;
+  inset: 0;
 }
 
-.configuration-panel > .ui-field {
-  width: min(100%, 460px);
+/* Un calcul en cours : le faisceau d'un portique balaie la vitre. */
+.viewport.is-busy::after,
+.palletization-viewport.is-busy::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -30%;
+  z-index: 2;
+  width: 26%;
+  content: '';
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.14) 50%,
+    transparent
+  );
+  animation: sweep 1.9s var(--ease-out) infinite;
 }
 
+/* La légende posée sur le verre, en bas à droite. */
+.palletization-scene__hint,
+.scene3d__hint {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  z-index: 1;
+  max-width: 32ch;
+  margin: 0;
+  padding: 7px var(--space-3);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: var(--text-2xs);
+  line-height: 1.4;
+  background: rgba(8, 26, 36, 0.66);
+  border-radius: var(--radius-chip);
+  backdrop-filter: blur(10px);
+}
+
+/* ======================================================================
+   ÉTAPE 1 — cadrer le calcul
+   ====================================================================== */
 .configuration-guide {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -715,32 +1135,24 @@
   display: flex;
   gap: var(--space-3);
   padding: var(--space-4);
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-control);
 }
 
-.configuration-guide article > span {
-  display: grid;
+.configuration-guide article > span:first-child {
   flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  color: #fff;
-  font-size: 0.8rem;
-  font-weight: 800;
-  background: var(--color-primary);
-  border-radius: 50%;
+  color: var(--primary);
 }
 
 .configuration-guide h3 {
-  margin: 1px 0 3px;
-  font-size: 0.94rem;
+  margin: 0 0 4px;
+  font-size: var(--text-base);
 }
 
 .configuration-guide p {
+  max-width: var(--measure-narrow);
   color: var(--color-muted);
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
 }
 
 .configuration-status-grid {
@@ -750,10 +1162,10 @@
 }
 
 .configuration-status-grid div {
-  padding: var(--space-3);
-  border-left: 3px solid var(--color-primary);
-  background: var(--color-primary-soft);
-  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--primary-soft);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
 }
 
 .configuration-status-grid span,
@@ -763,117 +1175,116 @@
 
 .configuration-status-grid span {
   color: var(--color-muted);
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: var(--text-2xs);
+  font-weight: 600;
 }
 
 .configuration-status-grid strong {
-  margin-top: 2px;
-  color: var(--color-primary-hover);
-  font-size: 0.9rem;
+  margin-top: 3px;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 650;
 }
 
-.step-navigation {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-3);
-  max-width: 1220px;
-  padding: var(--space-4) 0 0;
-  border-top: 1px solid var(--color-border);
-}
-
-.step-navigation > span {
-  min-width: 1px;
-}
-
+/* ======================================================================
+   RÉCAPITULATIF DE CONFIGURATION (rail, étapes 2 et 3)
+   ====================================================================== */
 .configuration-summary dl {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 6px;
   padding: 0;
   margin: 0;
 }
 
 .configuration-summary dl > div {
   padding: var(--space-3);
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-chip);
 }
 
 .configuration-summary dt {
-  color: var(--color-muted);
-  font-size: 0.72rem;
-  font-weight: 700;
+  color: var(--color-faint);
+  font-size: var(--text-2xs);
+  font-weight: 600;
 }
 
 .configuration-summary dd {
-  margin: 2px 0 0;
+  margin: 3px 0 0;
   color: var(--color-text);
-  font-size: 0.9rem;
-  font-weight: 760;
+  font-size: var(--text-sm);
+  font-weight: 650;
 }
 
 .configuration-summary small {
   display: block;
-  margin-top: 2px;
-  color: var(--color-muted);
-  font-size: 0.76rem;
+  margin-top: 3px;
+  color: var(--color-faint);
+  font-size: var(--text-2xs);
+  font-weight: 400;
 }
 
 .configuration-summary__note {
-  color: var(--color-muted);
-  font-size: 0.79rem;
-  line-height: 1.4;
+  max-width: var(--measure-narrow);
+  color: var(--color-faint);
+  font-size: var(--text-xs);
+  line-height: 1.45;
 }
 
-.palletization-panel {
-  max-width: 1220px;
-  padding: var(--space-4);
-}
-
-.palletization-viewport {
-  position: relative;
+/* ======================================================================
+   NAVIGATION D'ÉTAPE
+   ====================================================================== */
+/* La navigation reste au bas de la fenêtre pendant qu'on défile : les deux
+   flèches sont le geste le plus fréquent de l'étape, elles ne doivent pas
+   demander d'aller les chercher. `sticky` plutôt que `fixed` : la barre garde
+   sa place dans le flux et ne recouvre donc jamais la fin du contenu.
+   Aucun fond ici — ce sont les boutons qui portent leur ombre, et qui se
+   détachent seuls du contenu qui passe derrière. */
+.step-navigation {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: clamp(310px, 38vh, 430px);
-  overflow: hidden;
-  background:
-    linear-gradient(135deg, rgba(25, 61, 65, 0.22), transparent 60%),
-    #102b2d;
-  border: 1px solid rgba(178, 223, 216, 0.2);
-  border-radius: 13px;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  pointer-events: none;
 }
 
-.palletization-viewport > .muted {
-  max-width: 330px;
-  padding: var(--space-4);
-  color: #e5f3f1;
-  text-align: center;
+/* Le bandeau ne capte plus le pointeur, ses boutons si : sans cela, une bande
+   invisible bloquerait le clic sur toute la largeur. */
+.step-navigation > * {
+  pointer-events: auto;
 }
 
-.palletization-scene {
-  position: absolute;
-  inset: 0;
+/* L'ombre décolle le bouton du contenu qui défile dessous, et son fond est
+   plein : à travers un fond translucide, le texte qui passe derrière rendait
+   le libellé illisible. */
+.step-navigation .ui-button {
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
 }
 
-.palletization-scene__hint {
-  position: absolute;
-  right: var(--space-3);
-  bottom: var(--space-3);
-  z-index: 1;
-  max-width: 300px;
-  margin: 0;
-  padding: 6px 9px;
-  color: #e6f7f3;
-  font-size: 0.73rem;
-  line-height: 1.35;
-  background: rgba(10, 34, 35, 0.78);
-  border-radius: 7px;
+/* L'action principale garde son aplat de couleur. */
+.step-navigation .ui-button--primary {
+  background: var(--primary);
 }
 
-/* ---- Form layout helpers ---- */
+/* Le thème réduit l'ombre au survol ; ici elle doit rester ample, c'est
+   elle qui tient le bouton au-dessus du contenu. Le soulèvement d'un pixel
+   du thème s'en charge, lui. */
+.step-navigation .ui-button:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.step-navigation > span {
+  min-width: 1px;
+}
+
+/* ======================================================================
+   AIDES DE FORMULAIRE
+   ====================================================================== */
 .field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -883,111 +1294,17 @@
 .checkbox-row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3) var(--space-4);
-}
-
-.sidebar-section__eyebrow {
-  margin-bottom: 3px;
-  color: var(--color-accent);
-  font-size: 0.7rem;
-  font-weight: 750;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.pallet-specs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-2);
-  padding: 0;
-  margin: 0;
-}
-
-.pallet-specs div {
-  padding: 7px 8px;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-}
-
-.pallet-specs div:last-child {
-  grid-column: 1 / -1;
-}
-
-.pallet-specs dt {
-  color: var(--color-muted);
-  font-size: 0.7rem;
-  font-weight: 650;
-}
-
-.pallet-specs dd {
-  margin: 2px 0 0;
-  color: var(--color-text);
-  font-size: 0.82rem;
-  font-weight: 750;
-}
-
-/* ---- Project list ---- */
-.project-list {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.project-list__item {
-  display: flex;
-  align-items: stretch;
-  gap: 2px;
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-}
-
-.project-list__item--active {
-  background: var(--color-primary-soft);
-  border-color: #8ec4be;
-}
-
-.project-list__select {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: flex-start;
-  min-width: 0;
-  min-height: 48px;
-  padding: 7px 10px;
-  text-align: left;
-}
-
-.project-list__name {
-  overflow: hidden;
-  max-width: 100%;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.project-list__delete {
-  flex: 0 0 44px;
-  min-height: 44px;
-  padding: 0;
-  color: var(--color-muted);
-  font-size: 1.35rem;
-}
-
-.project-list__delete:hover:not(:disabled) {
-  color: var(--color-danger);
-  background: #feecea;
+  gap: var(--space-2) var(--space-4);
 }
 
 .row-actions {
   display: flex;
-  gap: var(--space-2);
+  gap: 6px;
 }
 
-/* ---- 3D scene overlays ---- */
+/* ======================================================================
+   COMMANDES POSÉES SUR LA 3D
+   ====================================================================== */
 .scene3d {
   position: absolute;
   inset: 0;
@@ -1006,19 +1323,36 @@
 .scene3d__views,
 .scene3d__modes {
   display: flex;
-  gap: 4px;
-  padding: 4px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(236, 248, 246, 0.45);
-  border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.16);
+  gap: 3px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-control);
+  backdrop-filter: blur(12px);
 }
 
 .scene3d__views .ui-button,
 .scene3d__modes .ui-button {
-  min-height: 32px;
-  padding: 5px 8px;
-  font-size: 0.78rem;
+  min-height: 30px;
+  padding: 4px var(--space-2);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: var(--text-xs);
+}
+
+.scene3d__views .ui-button:hover,
+.scene3d__modes .ui-button:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.scene3d__views .ui-button--primary,
+.scene3d__modes .ui-button--primary {
+  color: var(--on-accent);
+}
+
+.scene3d__views .ui-button--primary::before,
+.scene3d__modes .ui-button--primary::before {
+  background: var(--accent);
 }
 
 .scene3d__explore {
@@ -1028,328 +1362,422 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  min-width: 175px;
-  padding: 7px 9px;
-  color: #ecf8f6;
-  font-size: 0.72rem;
-  font-weight: 700;
-  background: rgba(10, 34, 35, 0.82);
-  border-radius: 8px;
+  gap: 5px;
+  min-width: 178px;
+  padding: var(--space-2) var(--space-3);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  background: rgba(8, 26, 36, 0.72);
+  border-radius: var(--radius-chip);
+  backdrop-filter: blur(12px);
 }
 
 .scene3d__explore select {
-  min-height: 30px;
-  padding: 4px 6px;
+  min-height: 32px;
+  padding: 4px 8px;
   color: var(--color-text);
-  font-size: 0.78rem;
-  background: #fff;
-  border: 1px solid #b5ceca;
-  border-radius: 6px;
+  font-size: var(--text-xs);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-chip);
 }
 
+/* La palette inspectée : liseré ambre, comme une pièce sortie du lot. */
 .scene3d__selection {
   position: absolute;
-  top: 84px;
+  top: 82px;
   right: var(--space-3);
   z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 3px;
-  max-width: 190px;
-  padding: 8px 9px;
-  color: #ecf8f6;
-  font-size: 0.76rem;
-  background: rgba(10, 34, 35, 0.9);
-  border-left: 3px solid #f7b955;
-  border-radius: 7px;
+  max-width: 196px;
+  padding: var(--space-2) var(--space-3);
+  color: #fff;
+  font-size: var(--text-xs);
+  background: rgba(8, 26, 36, 0.84);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-chip) var(--radius-chip) 0;
+  backdrop-filter: blur(12px);
+  animation: enter-fade var(--dur-fast) var(--ease-out) both;
+}
+
+.scene3d__selection strong {
+  font-size: var(--text-sm);
+}
+
+.scene3d__selection span {
+  color: rgba(255, 255, 255, 0.76);
 }
 
 .scene3d__selection .ui-button {
   align-self: flex-start;
-  min-height: 28px;
-  padding: 3px 0;
+  min-height: 26px;
+  padding: 2px 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--text-2xs);
+}
+
+.scene3d__selection .ui-button:hover {
   color: #fff;
-  font-size: 0.72rem;
+  background: transparent;
 }
 
-.scene3d__hint {
-  position: absolute;
-  right: var(--space-3);
-  bottom: var(--space-3);
-  z-index: 1;
-  max-width: 270px;
-  margin: 0;
-  padding: 6px 9px;
-  color: #e6f7f3;
-  font-size: 0.73rem;
-  line-height: 1.35;
-  background: rgba(10, 34, 35, 0.78);
-  border-radius: 7px;
-}
-
-/* ---- Results ---- */
+/* ======================================================================
+   RÉSULTATS
+   ====================================================================== */
 .results-panel {
-  padding: var(--space-4);
+  padding: var(--space-5);
 }
 
 .results-panel__header {
   align-items: center;
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .results-panel__header .ui-button {
   min-height: 38px;
-  padding: 7px 10px;
-  font-size: 0.86rem;
+  padding: 7px var(--space-3);
+  font-size: var(--text-xs);
 }
 
+.results-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Le compte de palettes : le seul très grand chiffre de l'interface. */
+.palletization-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--accent-soft);
+  border-radius: var(--radius-control);
+}
+
+.palletization-summary__number {
+  display: grid;
+  flex: 0 0 auto;
+  min-width: 46px;
+  height: 46px;
+  place-items: center;
+  padding: 0 var(--space-2);
+  color: var(--on-accent);
+  font-family: var(--font-family-display);
+  font-size: var(--text-lg);
+  font-stretch: var(--font-display-width);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--accent);
+  border-radius: var(--radius-chip);
+}
+
+.palletization-summary strong {
+  display: block;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.palletization-summary p {
+  max-width: 40ch;
+  margin-top: 2px;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+/* Jauge de remplissage : hachures de marquage, remplissage animé. */
 .fill-bar {
-  margin-bottom: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .fill-bar__head {
   display: flex;
   justify-content: space-between;
   gap: var(--space-2);
-  margin-bottom: 6px;
-  font-size: 0.88rem;
-  font-weight: 650;
+  font-size: var(--text-sm);
+}
+
+.fill-bar__head span:first-child {
+  color: var(--color-muted);
+}
+
+.fill-bar__head span:last-child {
+  color: var(--color-text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .fill-bar__track {
   height: 10px;
   overflow: hidden;
-  background: #dbe8e5;
-  border-radius: 999px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
 }
 
 .fill-bar__value {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-primary), #00a29a);
+  background:
+    repeating-linear-gradient(
+      118deg,
+      rgba(255, 255, 255, 0.22) 0 5px,
+      transparent 5px 11px
+    ),
+    linear-gradient(90deg, var(--accent), var(--accent-hover));
   border-radius: inherit;
+  transition: width var(--dur-slow) var(--ease-out);
 }
 
 .results-panel__unplaced {
-  margin-top: var(--space-3);
-}
-
-.palletization-summary {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  margin-bottom: var(--space-4);
-  background: var(--color-primary-soft);
-  border: 1px solid #91c6c0;
-  border-radius: var(--radius);
-}
-
-.palletization-summary__number {
-  display: grid;
-  flex: 0 0 auto;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  color: #fff;
-  font-size: 1.05rem;
-  font-weight: 800;
-  background: var(--color-primary);
-  border-radius: 10px;
-}
-
-.palletization-summary strong {
-  display: block;
-  font-size: 0.88rem;
-}
-
-.palletization-summary p {
-  margin-top: 2px;
-  color: var(--color-muted);
-  font-size: 0.78rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
 }
 
 .results-panel__alert {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-2);
-  padding: var(--space-3);
-  background: #fff3f1;
-  border: 1px solid #eeaaa2;
-  border-left: 4px solid var(--color-danger);
-  border-radius: var(--radius);
+  padding: var(--space-4);
+  background: var(--danger-soft);
+  border-left: 3px solid var(--danger);
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
 }
 
 .results-panel__alert p {
-  color: #762017;
-  font-size: 0.875rem;
+  max-width: var(--measure);
+  color: var(--color-text);
+  font-size: var(--text-sm);
 }
 
-/* ---- 3D hover tooltip ---- */
+/* ======================================================================
+   INFOBULLE 3D
+   ====================================================================== */
 .mesh-tooltip {
-  padding: 8px 10px;
+  padding: 7px var(--space-3);
   color: #fff;
-  font-size: 13px;
+  font-size: var(--text-xs);
+  font-weight: 600;
   pointer-events: none;
   white-space: nowrap;
-  background: rgba(10, 34, 35, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: var(--radius);
+  background: rgba(8, 26, 36, 0.92);
+  border-radius: var(--radius-chip);
 }
 
-@media (max-width: 1060px) {
+/* ======================================================================
+   MOUVEMENT
+   Une seule séquence à l'arrivée ; le reste répond à un geste.
+   ====================================================================== */
+@keyframes enter-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes enter-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+}
+
+@keyframes enter-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sweep {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(500%);
+  }
+}
+
+@keyframes beacon {
+  0% {
+    box-shadow: 0 0 0 0 var(--success-line);
+  }
+
+  70%,
+  100% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+/* ==========================================================================
+   ADAPTATIONS
+   ========================================================================== */
+
+/* ---- Petit portable ---- */
+@media (max-width: 1180px) {
   .editor {
-    grid-template-columns: 320px minmax(0, 1fr);
+    grid-template-columns: 312px minmax(0, 1fr);
   }
 
   .workspace-overview {
     grid-template-columns: 1fr;
   }
+}
 
-  .results-panel {
-    min-height: 0;
+/* ---- Tablette paysage ---- */
+@media (max-width: 1060px) {
+  .configuration-guide {
+    grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 760px) {
-  .project-home {
-    width: min(100% - 32px, 1040px);
-    padding: var(--space-5) 0;
-  }
-
-  .project-home__header {
+/* ---- Tablette portrait : le rail passe au-dessus, la piste se verticalise
+   (le Stepper change d'orientation seul, voir WorkflowSteps) ---- */
+@media (max-width: 860px) {
+  .editor {
+    display: flex;
     flex-direction: column;
   }
 
-  .project-home__actions {
-    width: 100%;
+  .sidebar {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    height: auto;
+    padding: var(--space-4);
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    animation-name: enter-fade;
   }
 
-  .project-home__actions .ui-button {
+  .sidebar__brand,
+  .sidebar__back,
+  .sidebar__intro {
+    grid-column: 1 / -1;
+  }
+
+  .workspace {
+    --workspace-pad: var(--space-5);
+
+    height: auto;
+    padding: 0 var(--workspace-pad);
+    overflow: visible;
+  }
+
+  .workspace-header {
+    padding-top: var(--space-4);
+  }
+
+  .workflow-steps {
+    padding: var(--space-4) var(--space-3);
+  }
+}
+
+/* ---- Mobile ---- */
+@media (max-width: 640px) {
+  .project-home,
+  .import-plan {
+    width: min(100% - 32px, var(--content-max));
+    gap: var(--space-5);
+    padding: var(--space-6) 0;
+  }
+
+  .project-home__header,
+  .import-plan__header,
+  .import-plan__submit,
+  .workspace-header,
+  .project-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .project-home__actions,
+  .topbar__actions {
+    width: 100%;
+    padding-top: 0;
+  }
+
+  .app-controls {
+    flex: 1 1 100%;
+  }
+
+  .app-controls__locale {
+    flex: 1;
+    width: auto;
+  }
+
+  .project-home__actions .ui-button,
+  .import-plan__header > .ui-button,
+  .import-plan__submit .ui-button,
+  .topbar__actions .ui-button {
     flex: 1;
   }
 
-  .import-plan {
-    width: min(100% - 32px, 920px);
-    padding: var(--space-5) 0;
-  }
-
-  .import-plan__header,
-  .import-plan__submit {
-    flex-direction: column;
-  }
-
-  .import-plan__header > .ui-button,
-  .import-plan__submit .ui-button {
-    width: 100%;
-  }
-
-  .import-plan__fields {
-    grid-template-columns: 1fr;
-  }
-
-  .import-results-list li {
-    align-items: flex-start;
-    flex-direction: column;
+  .project-home__brand .sidebar__mark {
+    width: 38px;
+    height: 38px;
   }
 
   .project-home__content {
     padding: var(--space-4);
   }
 
-  .editor {
-    display: block;
+  .import-plan__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .import-results-list li,
+  .import-preview-list li {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .sidebar {
-    padding: var(--space-4);
-    overflow: visible;
-    border-right: 0;
-    border-bottom: 1px solid #c9d1d5;
+    grid-template-columns: 1fr;
   }
 
   .workspace {
-    padding: var(--space-5) var(--space-4);
-    overflow: visible;
+    --workspace-pad: var(--space-4);
+
+    padding: 0 var(--workspace-pad);
   }
 
-  .workspace-header,
-  .project-bar {
-    flex-direction: column;
+  .workspace-header {
+    gap: var(--space-3);
   }
 
   .workflow-header__actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .project-status {
-    margin-top: 0;
+    justify-content: flex-start;
   }
 
   .project-bar > .ui-field {
     width: 100%;
   }
 
-  .topbar__actions {
-    width: 100%;
-    justify-content: stretch;
-  }
-
-  .topbar__actions .ui-button {
-    flex: 1;
-  }
-
-  .palettes-panel {
-    padding: var(--space-4);
-  }
-
-  .configuration-guide,
   .configuration-status-grid {
     grid-template-columns: 1fr;
   }
 
   .step-navigation {
+    flex-direction: column-reverse;
     align-items: stretch;
   }
 
-  .workflow-steps {
-    margin-right: calc(-1 * var(--space-2));
+  .step-navigation .ui-button {
+    width: 100%;
   }
 
-  .workflow-steps ol {
-    min-width: 0;
-  }
-
-  .workflow-step button {
-    grid-template-columns: 34px minmax(0, 1fr);
-    align-items: start;
-    gap: 5px;
-    min-height: 70px;
-    padding: 8px 6px;
-  }
-
-  .workflow-step__number {
-    width: 30px;
-    height: 30px;
-    font-size: 0.78rem;
-  }
-
-  .workflow-step:not(:last-child)::after {
-    top: 23px;
-    left: calc(50% + 24px);
-  }
-
-  .workflow-step strong {
-    overflow: visible;
-    font-size: 0.76rem;
-    line-height: 1.18;
-    text-overflow: clip;
-    white-space: normal;
-  }
-
-  .workflow-step small {
-    font-size: 0.7rem;
+  .palletization-summary {
+    align-items: flex-start;
   }
 }
 
@@ -1374,21 +1802,812 @@
   }
 
   .scene3d__explore {
-    top: 92px;
+    top: auto;
     right: var(--space-2);
+    bottom: var(--space-2);
     left: var(--space-2);
+    min-width: 0;
   }
 
   .scene3d__selection {
-    top: 154px;
+    top: var(--space-2);
     right: var(--space-2);
+    max-width: 62%;
   }
 
-  .scene3d__hint {
-    display: none;
-  }
-
+  .scene3d__hint,
   .palletization-scene__hint {
     display: none;
   }
+}
+
+/* ==========================================================================
+   CONTENEURS DE L'EXPÉDITION (étape 2)
+   Une carte par conteneur, dans l'ordre de chargement.
+   ========================================================================== */
+.container-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.container-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.container-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-control);
+}
+
+.container-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+/* Le rang dit l'ordre de chargement : le 1 se sert avant le 2. */
+.container-card__rank {
+  display: grid;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: var(--on-primary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--primary);
+  border-radius: 50%;
+}
+
+.container-card__head h3 {
+  font-size: var(--text-base);
+}
+
+.container-card__head > div:not(.container-card__rank) {
+  flex: 1;
+  min-width: 0;
+}
+
+.container-card__remove {
+  flex: 0 0 auto;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0;
+}
+
+.container-card__remove:hover {
+  color: var(--danger-text);
+  background: var(--danger-soft);
+}
+
+/* Assez large pour que « Conteneur 40 pieds High Cube » se lise en entier,
+   caret compris : le nom fait à lui seul près de 210px. */
+.container-card__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-4);
+}
+
+/* La valeur garde sa place à l'écart du caret : sans ce retrait, elle
+   passait dessous et paraissait coupée. Si la place manque vraiment, le
+   point de suspension reste plus lisible qu'un texte qui déborde. */
+.container-card__field .MuiSelect-select {
+  padding-right: 34px;
+}
+
+/* La liste déroulante se règle sur son contenu, dans une largeur lisible. */
+.ui-select__menu {
+  max-width: min(92vw, 460px);
+}
+
+.ui-select__menu .MuiMenuItem-root {
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.container-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Badge de taille : ce que coûte ce format, et le meilleur si ce n'est pas lui. */
+.size-badge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px var(--space-3);
+  color: var(--color-muted);
+  font-size: var(--text-2xs);
+  background: var(--glass-faint);
+  border-radius: var(--radius-chip);
+}
+
+.size-badge--best {
+  color: var(--success-text);
+  font-weight: 650;
+  background: var(--success-soft);
+}
+
+.size-badge small {
+  flex-basis: 100%;
+  color: var(--color-faint);
+  font-weight: 400;
+}
+
+.size-badge--best small {
+  color: var(--success-text);
+}
+
+/* ==========================================================================
+   PLAN DE CHARGEMENT (étape 3)
+   Une ligne par conteneur ; cliquer choisit celui qu'on inspecte en 3D.
+   ========================================================================== */
+.loading-plan {
+  position: relative;
+  max-width: var(--content-max);
+  padding: var(--space-5);
+  background: var(--glass);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+/* Un conteneur à la fois : au quatrième, une pile verticale obligeait à
+   descendre loin pour voir le dernier. La cadence vient du MobileStepper de
+   MUI, seule commande pour changer de conteneur. */
+.loading-plan__stepper {
+  padding: var(--space-2) 0 0;
+  background: transparent;
+}
+
+.loading-plan__stepper .MuiMobileStepper-progress,
+.loading-plan__stepper .MuiMobileStepper-dots {
+  flex: 1;
+  justify-content: center;
+}
+
+.loading-plan__stepper .MuiMobileStepper-dot {
+  background: var(--border-control);
+}
+
+.loading-plan__stepper .MuiMobileStepper-dotActive {
+  background: var(--primary);
+}
+
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-control);
+}
+
+.plan-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.plan-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.plan-card__body h3 {
+  color: var(--color-text);
+  font-family: var(--font-family-display);
+  font-size: var(--text-md);
+  font-stretch: var(--font-display-width);
+  font-weight: 700;
+}
+
+.plan-card__rank {
+  display: grid;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: var(--on-accent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.plan-card__figures {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.plan-card__fill {
+  display: block;
+  color: var(--color-text);
+  font-family: var(--font-family-display);
+  font-size: var(--text-lg);
+  font-stretch: var(--font-display-width);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.plan-card__figures small {
+  color: var(--color-faint);
+  font-size: var(--text-2xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-card__gauge {
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-pill);
+}
+
+.plan-card__gauge-value {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width var(--dur-slow) var(--ease-out);
+}
+
+/* Les réglages du conteneur, sous ses chiffres : la taille se corrige là où
+   l'on voit son remplissage. */
+.plan-card__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.plan-card__tools .container-card__fields {
+  flex: 1 1 100%;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.plan-card__tools .field-grid {
+  flex: 1 1 100%;
+}
+
+.plan-card__remove {
+  flex: 0 0 auto;
+  color: var(--danger-text);
+}
+
+.plan-card__remove:hover {
+  background: var(--danger-soft);
+}
+
+/* Jauge de remplissage du conteneur, sous sa ligne. */
+/* Ce que le calcul a dû rétablir, dit sous les lignes du plan. */
+.plan-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: var(--measure);
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  background: var(--glass-faint);
+  border-radius: var(--radius-chip);
+}
+
+/* Les réglages d'un conteneur, sous sa ligne de plan : la taille se corrige
+   là où l'on voit son remplissage. Le trait les rattache à leur ligne. */
+/* N'apparaît que s'il reste quelque chose à quai. */
+.loading-plan__leftover {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  background: var(--danger-soft);
+  border-left: 3px solid var(--danger);
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+}
+
+.loading-plan__leftover p {
+  max-width: var(--measure);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+/* Le total de l'expédition, sous les chiffres du conteneur inspecté. */
+.results-panel__shipment {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-top: var(--space-3);
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .container-card__fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   PASSE DE FINITION
+   Signes dans les en-têtes, glyphes des conteneurs, réponses au clic.
+   ========================================================================== */
+
+/* Un en-tête de colonne : le signe de la grandeur, puis son intitulé. */
+.ui-table__head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-muted);
+}
+
+/* Glyphe du conteneur : présent mais discret, il situe la carte d'un regard. */
+.container-card__glyph {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--primary);
+  opacity: 0.55;
+}
+
+/* Le survol et le clic suivent la forme du bouton, jamais un rectangle. */
+.project-list__select,
+.project-card__open,
+.workflow-steps .MuiStepButton-root {
+  border-radius: var(--radius-control);
+}
+
+/* La réponse au clic : l'élément s'enfonce légèrement, sans halo carré. */
+.project-list__select:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Verser un fichier de commande dans un lot déjà commencé. Le bloc vit dans
+   le rail, sous le formulaire d'ajout : la colonne est étroite, tout s'y
+   empile. */
+.package-import {
+  align-items: stretch;
+}
+
+.package-import .ui-button {
+  width: 100%;
+}
+
+/* Le champ natif reste dans l'arbre d'accessibilité, mais c'est le bouton
+   qu'on voit et qu'on clique. */
+.package-import__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.package-import__hint {
+  color: var(--color-faint);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.package-import__done {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--primary-text);
+  font-size: var(--text-xs);
+  font-weight: 650;
+}
+
+.package-import__done {
+  align-self: flex-start;
+}
+
+/* Les boutons du formulaire latéral, côte à côte. */
+.palette-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* La suppression se tient à l'écart des deux autres : c'est le seul geste
+   qu'on ne rattrape pas. */
+.palette-form__delete {
+  margin-left: auto;
+  color: var(--danger-text);
+}
+
+.palette-form__delete:hover {
+  background: var(--danger-soft);
+}
+
+/* Les libellés de champ tiennent maintenant au-dessus du champ : on rend la
+   place que le label flottant occupait. */
+.ui-field .MuiInputLabel-root {
+  position: static;
+  transform: none;
+}
+
+.ui-field .MuiOutlinedInput-root {
+  margin-top: 0;
+}
+
+/* Les boutons de la barre 3D portent une icône : ils ont besoin d'un peu
+   plus d'air pour ne pas serrer le texte. */
+.scene3d__views .ui-button,
+.scene3d__modes .ui-button {
+  min-height: 34px;
+  padding: 4px var(--space-3);
+}
+
+.scene3d__views .MuiButton-startIcon,
+.scene3d__modes .MuiButton-startIcon {
+  margin-right: 5px;
+  margin-left: 0;
+}
+
+/* Le témoin d'état du projet : plus lisible, aligné sur les pastilles. */
+.project-status {
+  min-height: 40px;
+  font-size: var(--text-sm);
+}
+
+/* Les icônes posées dans un texte courant s'alignent sur la ligne de base. */
+.muted .MuiBox-root,
+.results-panel__shipment .MuiBox-root {
+  color: var(--color-faint);
+}
+
+/* ==========================================================================
+   GRAND ÉCRAN — l'étape 3 se déplie en deux colonnes
+   Le plan et les chiffres à gauche, la cale à droite : on lit la répartition
+   et on la vérifie sans faire défiler.
+   ========================================================================== */
+@media (min-width: 1280px) {
+  .final-placement {
+    display: grid;
+    grid-template-columns: minmax(380px, 0.85fr) minmax(560px, 1.6fr);
+    align-items: start;
+    gap: var(--space-4);
+  }
+
+  .loading-plan {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .results-panel {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .scene-panel {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .palletization-panel {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  /* La cale gagne en hauteur puisqu'elle gagne en largeur. */
+  .viewport--final {
+    height: clamp(420px, 52vh, 620px);
+  }
+
+  .palletization-viewport {
+    height: clamp(360px, 42vh, 520px);
+  }
+}
+
+/* L'en-tête garde son compte aligné sur le titre, pas sur le glyphe. */
+.panel-heading__meta {
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   ASSISTANT D'IMPORT — choix des tailles
+   Une option par ligne : son nom, ses cotes, ce qu'elle coûterait, et le
+   drapeau de celle qui coûte le moins.
+   ========================================================================== */
+.size-chooser {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.size-chooser__group {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.size-chooser__group legend {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  margin-bottom: 4px;
+  color: var(--color-text);
+  font-family: var(--font-family-display);
+  font-size: var(--text-md);
+  font-stretch: var(--font-display-width);
+  font-weight: 700;
+}
+
+.size-chooser__group > .muted {
+  max-width: var(--measure);
+  margin-bottom: var(--space-3);
+}
+
+.size-chooser__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  /* Toutes les cartes ont la même hauteur, celle de la plus haute : une
+     option qui porte un avertissement ne doit pas dépasser ses voisines. */
+  grid-auto-rows: 1fr;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.size-chooser__options > li {
+  display: flex;
+  min-width: 0;
+}
+
+/* Une option est une ligne cliquable entière, pas une puce à viser. */
+.size-option {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 62px;
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  user-select: none;
+  background: var(--surface);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-control);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.size-option:hover {
+  background: var(--glass-faint);
+}
+
+.size-option input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.size-option__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.size-option__name {
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 650;
+}
+
+.size-option__dims {
+  color: var(--color-faint);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Le chiffre qui compte : combien il en faudrait. */
+.size-option__figure {
+  display: flex;
+  flex: 0 0 4.75rem;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.size-option__slot {
+  display: flex;
+  flex: 0 0 5.75rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Le reliquat qu'une taille laisserait à quai, dit sous les dimensions. */
+.size-option__warn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  color: var(--danger-text);
+  font-size: var(--text-2xs);
+  font-weight: 650;
+}
+
+.size-option__figure strong {
+  color: var(--color-text);
+  font-family: var(--font-family-display);
+  font-size: var(--text-lg);
+  font-stretch: var(--font-display-width);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.size-option__figure small,
+.size-option__figure em {
+  color: var(--color-faint);
+  font-size: var(--text-2xs);
+  font-style: normal;
+  text-align: right;
+}
+
+/* Choisie : le trait prend le bleu d'action et s'épaissit à peine, le fond ne
+   change pas — un voile coloré sous le texte le rendrait moins lisible. */
+.size-option--picked {
+  background: var(--surface);
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.size-option--picked:hover {
+  background: var(--surface);
+}
+
+.size-option--picked .size-option__name {
+  color: var(--primary-text);
+}
+
+/* Optimisée : le drapeau vert, qui peut coexister avec la sélection. */
+.size-option--best {
+  border-color: var(--success-line);
+}
+
+.size-option--picked.size-option--best {
+  border-color: var(--primary);
+}
+
+.size-option__flag {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  padding: 4px var(--space-2);
+  color: var(--success-text);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  background: var(--success-soft);
+  border-radius: var(--radius-pill);
+}
+
+/* Hors d'atteinte : le format ne peut pas porter les colis, et un autre
+   peut. L'option reste lisible — on doit voir pourquoi elle est écartée —
+   mais elle ne se clique pas. */
+.size-option--blocked {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.size-option--blocked input {
+  cursor: not-allowed;
+}
+
+.size-option--blocked .size-option__name {
+  color: var(--color-muted);
+}
+
+/* Ne convient pas, sans qu'aucun autre ne convienne : l'option s'efface un
+   peu mais reste choisissable, faute de mieux. */
+.size-option--impossible:not(.size-option--blocked) {
+  opacity: 0.72;
+}
+
+/* Le projet créé, en fin d'assistant. */
+.import-outcome {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--success-soft);
+  border-radius: var(--radius-control);
+}
+
+.import-outcome__actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.import-outcome__figure {
+  display: grid;
+  flex: 0 0 auto;
+  min-width: 56px;
+  height: 56px;
+  place-items: center;
+  color: #fff;
+  font-family: var(--font-family-display);
+  font-size: var(--text-xl);
+  font-stretch: var(--font-display-width);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--success);
+  border-radius: var(--radius-chip);
+}
+
+.import-outcome > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.import-outcome strong {
+  display: block;
+  color: var(--color-text);
+  font-family: var(--font-family-display);
+  font-size: var(--text-md);
+  font-stretch: var(--font-display-width);
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .size-chooser__options {
+    grid-template-columns: 1fr;
+  }
+
+  .import-outcome {
+    flex-wrap: wrap;
+  }
+}
+
+/* La sortie de secours quand des charges ne rentrent nulle part. */
+.import-outcome__leftover {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--danger-line);
 }

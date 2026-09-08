@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { getContainerTypes } from '../api/containerTypes.api'
 import type { ContainerType } from '../types/container.types'
 
-// Fetch and cache the predefined container types once.
+// Charge les tailles de conteneur une fois pour toutes.
 export function useContainerTypes() {
   const [containerTypes, setContainerTypes] = useState<ContainerType[]>([])
   const [loading, setLoading] = useState(true)

@@ -15,6 +15,14 @@ from api_container.app.packing.palletization import (
     PalletizationResult,
     pack_into_pallets,
 )
+from api_container.app.packing.multi_container import (
+    ContainerSlot,
+    LoadedContainer,
+    MultiLoadResult,
+    containers_needed,
+    simulate_containers,
+    load_containers,
+)
 from api_container.app.packing.packer import pack
 
 __all__ = (
@@ -25,6 +33,12 @@ __all__ = (
     "PackingResult",
     "PackedPallet",
     "PalletizationResult",
+    "ContainerSlot",
+    "LoadedContainer",
+    "MultiLoadResult",
+    "containers_needed",
+    "simulate_containers",
+    "load_containers",
     "pack",
     "pack_into_pallets",
 )
