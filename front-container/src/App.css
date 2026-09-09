@@ -2378,7 +2378,11 @@
   .final-placement {
     display: grid;
     grid-template-columns: minmax(380px, 0.85fr) minmax(560px, 1.6fr);
-    align-items: start;
+    /* « stretch » (le défaut de la grille) plutôt que « start » : chaque
+       carte d'une même ligne prend la hauteur de la plus grande, au lieu de
+       s'arrêter à son propre contenu — sinon le plan et la cale, cote à
+       cote, ne finissaient jamais à la même hauteur. */
+    align-items: stretch;
     gap: var(--space-4);
   }
 

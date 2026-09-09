@@ -36,9 +36,18 @@ export function PackageMesh({
         color={color}
         roughness={0.62}
         transparent={dimmed}
-        opacity={dimmed ? 0.14 : 1}
+        opacity={dimmed ? 0.06 : 1}
+        // Un colis estompé n'écrit plus dans le tampon de profondeur : sinon
+        // il continue de cacher ce qu'il y a derrière malgré sa transparence,
+        // et l'effet se voit à peine.
+        depthWrite={!dimmed}
       />
-      <Edges color={hovered ? '#ffffff' : '#172f30'} lineWidth={1} />
+      <Edges
+        color={hovered ? '#ffffff' : '#172f30'}
+        lineWidth={1}
+        transparent={dimmed}
+        opacity={dimmed ? 0.1 : 1}
+      />
       {hovered ? (
         <Html center distanceFactor={8} className="mesh-tooltip">
           <strong>{label}</strong>
