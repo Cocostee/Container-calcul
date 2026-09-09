@@ -795,25 +795,20 @@ export function EditorPage() {
               eyebrow={t('palletization.eyebrow')}
               title={t('palletization.title')}
               titleId="palletization-title"
-              meta={t('palletization.meta', { count: allPallets.length })}
             />
-            <div
-              className={
-                optimization.isOptimizing
-                  ? 'palletization-viewport is-busy'
-                  : 'palletization-viewport'
-              }
-            >
-              {optimization.isOptimizing ? (
+            {optimization.isOptimizing ? (
+              <div className="palletization-viewport is-busy">
                 <p className="muted" role="status">
                   {t('palletization.updating')}
                 </p>
-              ) : allPallets.length > 0 ? (
-                <PalletExplorerScene pallets={allPallets} />
-              ) : (
+              </div>
+            ) : allPallets.length > 0 ? (
+              <PalletExplorerScene pallets={allPallets} />
+            ) : (
+              <div className="palletization-viewport">
                 <p className="muted">{t('palletization.empty')}</p>
-              )}
-            </div>
+              </div>
+            )}
           </section>
         ) : null}
 

@@ -25,6 +25,8 @@ const DEFAULT_GAP_CM = 4
 const MIN_GAP_CM = 0
 const MAX_GAP_CM = 20
 
+type Vec3 = [number, number, number]
+
 /** Une palette du plan, rattachée au conteneur qui la reçoit. */
 export interface PalletWithOrigin {
   pallet: GeneratedPallet
@@ -38,7 +40,7 @@ interface PalletExplorerSceneProps {
 
 interface CameraRigProps {
   distance: number
-  target: [number, number, number]
+  target: Vec3
 }
 
 function CameraRig({ distance, target }: CameraRigProps) {
@@ -64,10 +66,62 @@ function layersOf(packages: PackagePlacement[]): number[] {
 }
 
 /**
+ * Écarte chaque colis de son point de pose, en l'éloignant du centre du lot
+ * dans les trois axes — sans jamais toucher à sa taille. C'est le principe
+ * de la vue éclatée déjà utilisée ailleurs dans l'application, appliqué ici
+ * aux colis d'une même palette plutôt qu'aux palettes d'un conteneur.
+ */
+function explodeOffsets(
+  packages: PackagePlacement[],
+  gapCm: number,
+): Map<string, Vec3> {
+  const offsets = new Map<string, Vec3>()
+  if (packages.length === 0 || gapCm === 0) return offsets
+
+  const centroid = packages.reduce(
+    (acc, item) => [
+      acc[0] + item.x + item.length / 2,
+      acc[1] + item.y + item.width / 2,
+      acc[2] + item.z + item.height / 2,
+    ],
+    [0, 0, 0],
+  )
+  centroid[0] /= packages.length
+  centroid[1] /= packages.length
+  centroid[2] /= packages.length
+
+  for (const item of packages) {
+    const center: Vec3 = [
+      item.x + item.length / 2,
+      item.y + item.width / 2,
+      item.z + item.height / 2,
+    ]
+    const direction: Vec3 = [
+      center[0] - centroid[0],
+      center[1] - centroid[1],
+      center[2] - centroid[2],
+    ]
+    const magnitude = Math.hypot(direction[0], direction[1], direction[2])
+    offsets.set(
+      item.package_id,
+      magnitude > 1e-6
+        ? [
+            (direction[0] / magnitude) * gapCm,
+            (direction[1] / magnitude) * gapCm,
+            (direction[2] / magnitude) * gapCm,
+          ]
+        : [0, 0, 0],
+    )
+  }
+
+  return offsets
+}
+
+/**
  * Les palettes montées, parcourues une à une pour que chaque colis reste
  * lisible — ce que le plan de chargement ne permet pas, puisqu'il les serre
- * dans la cale. L'écart entre colis et la couche affichée se règlent ici,
- * pour contrôler l'empilage avant de passer au plan final.
+ * dans la cale. L'écart entre colis et la couche affichée se règlent au fil
+ * de la page, au-dessus du hublot, qui garde ainsi toute la place pour la 3D.
  */
 export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
   const { t } = useTranslation()
@@ -102,6 +156,11 @@ export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
 
   const layerOf = (z: number): number => layers.indexOf(Math.round(z)) + 1
 
+  const offsets = useMemo(
+    () => explodeOffsets(current?.pallet.packages ?? [], gapCm),
+    [current, gapCm],
+  )
+
   // Une seule attribution pour tout le lot visible : la couleur d'une
   // commande reste la même d'une palette à l'autre pendant qu'on les parcourt.
   const allPackages = useMemo(
@@ -119,7 +178,7 @@ export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
 
   const layout = useMemo(() => {
     if (!current) {
-      return { distance: 4, target: [0, 0.5, 0] as [number, number, number] }
+      return { distance: 4, target: [0, 0.5, 0] as Vec3 }
     }
     const { pallet } = current
     const maxDim = Math.max(
@@ -128,11 +187,13 @@ export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
       pallet.height * SCALE,
       1,
     )
+    // La vue éclatée gagne en portée : la caméra recule pour la garder entière.
+    const spread = 1 + (gapCm * SCALE) / maxDim
     return {
-      distance: maxDim * 1.9,
-      target: [0, (pallet.height * SCALE) / 2, 0] as [number, number, number],
+      distance: maxDim * 3.2 * spread,
+      target: [0, (pallet.height * SCALE) / 2, 0] as Vec3,
     }
-  }, [current])
+  }, [current, gapCm])
 
   if (!current) return null
 
@@ -140,53 +201,57 @@ export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
   const palletBottom = -(pallet.height * SCALE) / 2
 
   return (
-    <div className="pallet-explorer-scene">
-      <ColorLegend
-        entries={legend}
-        selectedKey={highlightedKey}
-        onToggle={(key) =>
-          setHighlightedKey((value) => (value === key ? null : key))
-        }
-      />
+    <div className="pallet-explorer">
+      <div className="pallet-explorer__toolbar">
+        <div className="pallet-explorer__total" role="status">
+          <strong>{pallets.length}</strong>
+          <span>{t('palletization.totalLabel')}</span>
+        </div>
 
-      <div
-        className="pallet-explorer__nav"
-        role="group"
-        aria-label={t('palletization.title')}
-      >
-        <Button
-          variant="ghost"
-          icon="arrow-left-outline"
-          disabled={clampedIndex === 0}
-          onClick={() => setIndex(Math.max(0, clampedIndex - 1))}
+        <div
+          className="pallet-explorer__nav"
+          role="group"
+          aria-label={t('palletization.title')}
         >
-          {t('palletization.navPrevious')}
-        </Button>
-        <span className="pallet-explorer__position" aria-live="polite">
-          {t('palletization.palletPosition', {
-            index: clampedIndex + 1,
-            total: pallets.length,
-          })}
-        </span>
-        <Button
-          variant="ghost"
-          iconAfter="arrow-right-outline"
-          disabled={clampedIndex === pallets.length - 1}
-          onClick={() =>
-            setIndex(Math.min(pallets.length - 1, clampedIndex + 1))
-          }
-        >
-          {t('palletization.navNext')}
-        </Button>
+          <Button
+            variant="ghost"
+            icon="arrow-left-outline"
+            disabled={clampedIndex === 0}
+            onClick={() => setIndex(Math.max(0, clampedIndex - 1))}
+          >
+            {t('palletization.navPrevious')}
+          </Button>
+          <label className="pallet-explorer__pallet-select">
+            <span>{t('palletization.choosePalletLabel')}</span>
+            <select
+              value={clampedIndex}
+              onChange={(event) => setIndex(Number(event.target.value))}
+            >
+              {pallets.map((entry, entryIndex) => (
+                <option key={entry.pallet.id} value={entryIndex}>
+                  {t('palletization.palletSelectOption', {
+                    index: entryIndex + 1,
+                    total: pallets.length,
+                    position: entry.containerPosition,
+                  })}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button
+            variant="ghost"
+            iconAfter="arrow-right-outline"
+            disabled={clampedIndex === pallets.length - 1}
+            onClick={() =>
+              setIndex(Math.min(pallets.length - 1, clampedIndex + 1))
+            }
+          >
+            {t('palletization.navNext')}
+          </Button>
+        </div>
       </div>
-      <p className="pallet-explorer__origin">
-        {t('palletization.containerOrigin', {
-          position: current.containerPosition,
-          name: current.containerName,
-        })}
-      </p>
 
-      <div className="pallet-explorer__settings">
+      <div className="pallet-explorer__adjustments">
         <label className="pallet-explorer__gap">
           <span>
             {t('palletization.gapLabel')} ·{' '}
@@ -204,104 +269,125 @@ export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
         </label>
 
         {layers.length > 1 ? (
-          <div
-            className="pallet-explorer__layers"
-            role="group"
-            aria-label={t('palletization.layersLabel')}
-          >
-            <Button
-              variant={layerIndex === null ? 'primary' : 'ghost'}
-              aria-pressed={layerIndex === null}
-              onClick={() => setLayerIndex(null)}
+          <label className="pallet-explorer__layer-select">
+            <span>{t('palletization.layersLabel')}</span>
+            <select
+              value={layerIndex ?? 'all'}
+              onChange={(event) =>
+                setLayerIndex(
+                  event.target.value === 'all'
+                    ? null
+                    : Number(event.target.value),
+                )
+              }
             >
-              {t('palletization.layerAll')}
-            </Button>
-            {layers.map((_, layerOffset) => {
-              const number = layerOffset + 1
-              return (
-                <Button
-                  key={number}
-                  variant={layerIndex === number ? 'primary' : 'ghost'}
-                  aria-pressed={layerIndex === number}
-                  onClick={() => setLayerIndex(number)}
-                >
-                  {t('palletization.layerOption', {
-                    index: number,
-                    total: layers.length,
-                  })}
-                </Button>
-              )
-            })}
-          </div>
+              <option value="all">{t('palletization.layerAll')}</option>
+              {layers.map((_, layerOffset) => {
+                const number = layerOffset + 1
+                return (
+                  <option key={number} value={number}>
+                    {t('palletization.layerOption', {
+                      index: number,
+                      total: layers.length,
+                    })}
+                  </option>
+                )
+              })}
+            </select>
+          </label>
         ) : null}
       </div>
 
-      <p className="palletization-scene__hint">
-        {t('scene.palletExplorerHint')}
-      </p>
-
-      <Canvas
-        aria-label={t('scene.palletExplorerAriaLabel')}
-        camera={{
-          position: [layout.distance, layout.distance, layout.distance],
-          fov: 45,
-        }}
-      >
-        <ambientLight intensity={0.82} />
-        <directionalLight position={[10, 20, 10]} intensity={0.76} />
-        <CameraRig distance={layout.distance} target={layout.target} />
-        <OrbitControls target={layout.target} makeDefault />
-        <PaletteMesh
-          position={[0, (pallet.height * SCALE) / 2, 0]}
-          size={[
-            pallet.length * SCALE,
-            pallet.height * SCALE,
-            pallet.width * SCALE,
-          ]}
-          baseHeight={pallet.base_height * SCALE}
-          color={colorByPaletteType(pallet.id)}
-          label={pallet.label}
-          weightKg={pallet.weight_kg}
-          dimsLabel={`${Math.round(pallet.length)}×${Math.round(
-            pallet.width,
-          )}×${Math.round(pallet.height)} cm`}
-          packageCount={pallet.package_count}
-          selected
+      <div className="palletization-viewport">
+        <ColorLegend
+          entries={legend}
+          selectedKey={highlightedKey}
+          onToggle={(key) =>
+            setHighlightedKey((value) => (value === key ? null : key))
+          }
         />
-        {pallet.packages.map((packagePlacement) => {
-          const dimmedByLegend =
-            highlightedKey !== null &&
-            packageColorKey(packagePlacement) !== highlightedKey
-          const dimmedByLayer =
-            layerIndex !== null && layerOf(packagePlacement.z) !== layerIndex
+        <p className="palletization-scene__hint">
+          {t('scene.palletExplorerHint')}
+        </p>
 
-          return (
-            <PackageMesh
-              key={packagePlacement.package_id}
-              position={[
-                -(pallet.length * SCALE) / 2 +
-                  (packagePlacement.x + packagePlacement.length / 2) * SCALE,
-                palletBottom +
-                  pallet.base_height * SCALE +
-                  (packagePlacement.z + packagePlacement.height / 2) * SCALE,
-                -(pallet.width * SCALE) / 2 +
-                  (packagePlacement.y + packagePlacement.width / 2) * SCALE,
-              ]}
-              size={[
-                Math.max(packagePlacement.length - gapCm, 5) * SCALE,
-                packagePlacement.height * SCALE,
-                Math.max(packagePlacement.width - gapCm, 5) * SCALE,
-              ]}
-              color={
-                packageColors.get(packageColorKey(packagePlacement)) ??
-                colorByPaletteType(packagePlacement.package_id)
-              }
-              label={packagePlacement.label ?? packagePlacement.package_id}
-              dimmed={dimmedByLegend || dimmedByLayer}
-            />
-          )
-        })}
-      </Canvas>
+        <Canvas
+          aria-label={t('scene.palletExplorerAriaLabel')}
+          camera={{
+            position: [layout.distance, layout.distance, layout.distance],
+            fov: 28,
+          }}
+        >
+          <ambientLight intensity={0.82} />
+          <directionalLight position={[10, 20, 10]} intensity={0.76} />
+          <CameraRig distance={layout.distance} target={layout.target} />
+          <OrbitControls target={layout.target} makeDefault />
+          <PaletteMesh
+            position={[0, (pallet.height * SCALE) / 2, 0]}
+            size={[
+              pallet.length * SCALE,
+              pallet.height * SCALE,
+              pallet.width * SCALE,
+            ]}
+            baseHeight={pallet.base_height * SCALE}
+            color={colorByPaletteType(pallet.id)}
+            label={pallet.label}
+            weightKg={pallet.weight_kg}
+            dimsLabel={`${Math.round(pallet.length)}×${Math.round(
+              pallet.width,
+            )}×${Math.round(pallet.height)} cm`}
+            packageCount={pallet.package_count}
+            selected
+          />
+          {pallet.packages.map((packagePlacement) => {
+            const dimmedByLegend =
+              highlightedKey !== null &&
+              packageColorKey(packagePlacement) !== highlightedKey
+            const dimmedByLayer =
+              layerIndex !== null &&
+              layerOf(packagePlacement.z) !== layerIndex
+            const offset = offsets.get(packagePlacement.package_id) ?? [
+              0, 0, 0,
+            ]
+
+            return (
+              <PackageMesh
+                key={packagePlacement.package_id}
+                position={[
+                  -(pallet.length * SCALE) / 2 +
+                    (packagePlacement.x +
+                      packagePlacement.length / 2 +
+                      offset[0]) *
+                      SCALE,
+                  palletBottom +
+                    pallet.base_height * SCALE +
+                    (packagePlacement.z +
+                      packagePlacement.height / 2 +
+                      offset[2]) *
+                      SCALE,
+                  -(pallet.width * SCALE) / 2 +
+                    (packagePlacement.y +
+                      packagePlacement.width / 2 +
+                      offset[1]) *
+                      SCALE,
+                ]}
+                // La taille d'origine du colis, intacte : seul son écart aux
+                // voisins bouge avec le réglage, jamais sa taille.
+                size={[
+                  packagePlacement.length * SCALE,
+                  packagePlacement.height * SCALE,
+                  packagePlacement.width * SCALE,
+                ]}
+                color={
+                  packageColors.get(packageColorKey(packagePlacement)) ??
+                  colorByPaletteType(packagePlacement.package_id)
+                }
+                label={packagePlacement.label ?? packagePlacement.package_id}
+                dimmed={dimmedByLegend || dimmedByLayer}
+              />
+            )
+          })}
+        </Canvas>
+      </div>
     </div>
   )
 }

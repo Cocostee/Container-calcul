@@ -80,7 +80,12 @@ export function PaletteMesh({
           (index * (length - topBoardWidth)) / 5
         return (
           <mesh key={`deck-${index}`} position={[x, topDeckY, 0]}>
-            <boxGeometry args={[topBoardWidth, boardThickness, width * 0.97]} />
+            {/*
+             * Plein largeur (pas de retrait cosmétique comme les traverses
+             * du dessous) : un colis qui utilise toute la palette doit
+             * reposer sur du bois jusqu'au bord, jamais dépasser le plateau.
+             */}
+            <boxGeometry args={[topBoardWidth, boardThickness, width]} />
             <meshStandardMaterial color={WOOD_LIGHT} roughness={0.86} />
           </mesh>
         )

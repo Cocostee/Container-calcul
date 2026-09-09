@@ -1507,113 +1507,88 @@
   background: transparent;
 }
 
-/* Navigation « palette précédente / suivante » de l'étape 3, posée en haut à
-   gauche du hublot, comme la barre d'angles de vue de la scène finale. */
-.pallet-explorer__nav {
-  position: absolute;
-  top: var(--space-3);
-  left: var(--space-3);
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-control);
-  backdrop-filter: blur(12px);
-}
-
-.pallet-explorer__nav .ui-button {
-  min-height: 30px;
-  padding: 4px var(--space-2);
-  color: rgba(255, 255, 255, 0.86);
-  font-size: var(--text-xs);
-}
-
-.pallet-explorer__nav .ui-button:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.pallet-explorer__position {
-  padding: 0 4px;
-  color: #fff;
-  font-size: var(--text-xs);
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.pallet-explorer__origin {
-  position: absolute;
-  top: 54px;
-  left: var(--space-3);
-  z-index: 1;
-  margin: 0;
-  padding: 3px var(--space-3);
-  color: rgba(255, 255, 255, 0.82);
-  font-size: var(--text-2xs);
-  background: rgba(8, 26, 36, 0.66);
-  border-radius: var(--radius-chip);
-  backdrop-filter: blur(10px);
-}
-
-/* Écart entre colis et couche affichée : les deux réglages de l'étape 3,
-   posés à droite comme la boîte « Explorer une palette » de la scène finale. */
-.pallet-explorer__settings {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-  z-index: 1;
+/*
+ * Commandes de l'étape 3 (choix de palette, écart, couche) : posées au fil
+ * de la page, au-dessus du hublot, plutôt qu'en incrustation sur la 3D —
+ * sinon la liste des couches, longue, empiétait sur la vue qu'elle est
+ * censée régler.
+ */
+.pallet-explorer {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  min-width: 208px;
-  padding: var(--space-2) var(--space-3);
-  color: rgba(255, 255, 255, 0.86);
-  font-size: var(--text-2xs);
-  font-weight: 600;
-  background: rgba(8, 26, 36, 0.72);
-  border-radius: var(--radius-chip);
-  backdrop-filter: blur(12px);
+  gap: var(--space-3);
 }
 
-.pallet-explorer__gap {
+.pallet-explorer__toolbar,
+.pallet-explorer__adjustments {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pallet-explorer__toolbar {
+  justify-content: space-between;
+}
+
+/* Le total de palettes, la mesure que l'étape doit surtout faire voir. */
+.pallet-explorer__total {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px var(--space-3);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-pill);
+}
+
+.pallet-explorer__total strong {
+  color: var(--accent);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pallet-explorer__total span {
+  color: var(--color-muted);
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.pallet-explorer__nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pallet-explorer__pallet-select,
+.pallet-explorer__gap,
+.pallet-explorer__layer-select {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  min-width: 220px;
+  color: var(--color-muted);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+}
+
+.pallet-explorer__pallet-select select,
+.pallet-explorer__layer-select select {
+  min-height: 36px;
+  padding: 4px var(--space-2);
+  color: var(--color-text);
+  font-size: var(--text-xs);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-chip);
 }
 
 .pallet-explorer__gap input[type='range'] {
   width: 100%;
   accent-color: var(--accent);
-}
-
-.pallet-explorer__layers {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-}
-
-.pallet-explorer__layers .ui-button {
-  min-height: 26px;
-  padding: 2px var(--space-2);
-  color: rgba(255, 255, 255, 0.86);
-  font-size: var(--text-2xs);
-}
-
-.pallet-explorer__layers .ui-button:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.pallet-explorer__layers .ui-button--primary {
-  color: var(--on-accent);
-}
-
-.pallet-explorer__layers .ui-button--primary::before {
-  background: var(--accent);
 }
 
 /* ======================================================================
@@ -1971,6 +1946,19 @@
   .palletization-summary {
     align-items: flex-start;
   }
+
+  .pallet-explorer__toolbar,
+  .pallet-explorer__adjustments,
+  .pallet-explorer__nav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pallet-explorer__pallet-select,
+  .pallet-explorer__gap,
+  .pallet-explorer__layer-select {
+    min-width: 0;
+  }
 }
 
 @media (max-width: 430px) {
@@ -2011,24 +1999,6 @@
   .palletization-scene__hint,
   .pallet-color-legend {
     display: none;
-  }
-
-  .pallet-explorer__nav {
-    right: var(--space-2);
-    left: var(--space-2);
-    justify-content: space-between;
-  }
-
-  .pallet-explorer__origin {
-    left: var(--space-2);
-  }
-
-  .pallet-explorer__settings {
-    top: auto;
-    right: var(--space-2);
-    bottom: var(--space-2);
-    left: var(--space-2);
-    min-width: 0;
   }
 }
 
