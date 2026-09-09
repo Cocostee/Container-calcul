@@ -247,6 +247,28 @@ export const es: Messages = {
     hint: 'Seleccione todos los palés para comparar sus volúmenes transparentes: la vista explosionada se activa para facilitar la inspección. Las flechas y el travesaño de color indican la orientación del palé.',
     legendTitle: 'Un color por línea de bulto',
     legendUnlabelled: 'Bulto sin referencia',
+    legendSelected: 'Aislar este pedido en la vista',
+    legendClear: 'Volver a todos los colores',
+  },
+
+  print: {
+    close: 'Cerrar',
+    action: 'Imprimir / Guardar como PDF',
+    notFound: 'Proyecto no encontrado.',
+    noResult: 'Aún no se ha calculado ningún plan para este proyecto.',
+    generatedAt: 'Generado el {date}',
+    containersLabel: 'Contenedores',
+    volumeLabel: 'Relleno volumétrico',
+    weightLabel: 'Relleno ponderal',
+    unplacedLabel: 'Bultos sin repartir',
+    columnPackage: 'Bulto',
+    columnDimensions: 'Dimensiones',
+    columnQuantity: 'Cantidad',
+    columnLoad: 'Carga',
+    assembledCaption: 'Cargas ya montadas',
+    loadNumber: 'Carga {position}',
+    palletCaption_one: '{count} bulto · {fill} lleno · {weight} kg',
+    palletCaption_other: '{count} bultos · {fill} lleno · {weight} kg',
   },
 
   import: {

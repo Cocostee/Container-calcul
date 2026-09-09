@@ -247,6 +247,28 @@ export const en: Messages = {
     hint: 'Select all pallets to compare their transparent volumes: the exploded view turns on to make inspection easier. The arrows and the coloured beam show which way the pallet faces.',
     legendTitle: 'One colour per package line',
     legendUnlabelled: 'Unreferenced package',
+    legendSelected: 'Isolate this order in the view',
+    legendClear: 'Back to every colour',
+  },
+
+  print: {
+    close: 'Close',
+    action: 'Print / Save as PDF',
+    notFound: 'Project not found.',
+    noResult: 'No plan computed for this project yet.',
+    generatedAt: 'Generated on {date}',
+    containersLabel: 'Containers',
+    volumeLabel: 'Volume filled',
+    weightLabel: 'Weight filled',
+    unplacedLabel: 'Unplaced packages',
+    columnPackage: 'Package',
+    columnDimensions: 'Dimensions',
+    columnQuantity: 'Quantity',
+    columnLoad: 'Load',
+    assembledCaption: 'Already-built loads',
+    loadNumber: 'Load {position}',
+    palletCaption_one: '{count} package · {fill} full · {weight} kg',
+    palletCaption_other: '{count} packages · {fill} full · {weight} kg',
   },
 
   import: {

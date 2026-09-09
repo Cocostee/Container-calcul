@@ -1,6 +1,6 @@
 import { OrbitControls } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { useTranslation } from '../../i18n'
 import type { GeneratedPallet } from '../../types/placement.types'
@@ -47,6 +47,8 @@ function CameraRig({ distance, target }: CameraRigProps) {
  */
 export function PalletizationScene({ pallets }: PalletizationSceneProps) {
   const { t } = useTranslation()
+  // Le groupe isolé par un clic sur la légende ; `null` montre tout normalement.
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
   const layout = useMemo(() => {
     const maxLength = Math.max(
       ...pallets.map((pallet) => pallet.length * SCALE),
@@ -98,7 +100,13 @@ export function PalletizationScene({ pallets }: PalletizationSceneProps) {
 
   return (
     <div className="palletization-scene">
-      <ColorLegend entries={legend} />
+      <ColorLegend
+        entries={legend}
+        selectedKey={highlightedKey}
+        onToggle={(key) =>
+          setHighlightedKey((current) => (current === key ? null : key))
+        }
+      />
       <p className="palletization-scene__hint">
         {t('scene.palletizationHint')}
       </p>
@@ -159,6 +167,10 @@ export function PalletizationScene({ pallets }: PalletizationSceneProps) {
                     colorByPaletteType(packagePlacement.package_id)
                   }
                   label={packagePlacement.label ?? packagePlacement.package_id}
+                  dimmed={
+                    highlightedKey !== null &&
+                    packageColorKey(packagePlacement) !== highlightedKey
+                  }
                 />
               ))}
             </group>

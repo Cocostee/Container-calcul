@@ -247,6 +247,28 @@ export const de: Messages = {
     hint: 'Wählen Sie alle Paletten, um ihre transparenten Volumen zu vergleichen: die Explosionsansicht schaltet sich ein und erleichtert die Prüfung. Pfeile und farbiger Balken zeigen die Ausrichtung der Palette.',
     legendTitle: 'Eine Farbe pro Packstückzeile',
     legendUnlabelled: 'Packstück ohne Referenz',
+    legendSelected: 'Diesen Auftrag in der Ansicht isolieren',
+    legendClear: 'Zurück zu allen Farben',
+  },
+
+  print: {
+    close: 'Schließen',
+    action: 'Drucken / Als PDF speichern',
+    notFound: 'Projekt nicht gefunden.',
+    noResult: 'Für dieses Projekt wurde noch kein Plan berechnet.',
+    generatedAt: 'Erstellt am {date}',
+    containersLabel: 'Container',
+    volumeLabel: 'Volumenauslastung',
+    weightLabel: 'Gewichtsauslastung',
+    unplacedLabel: 'Nicht verteilte Packstücke',
+    columnPackage: 'Packstück',
+    columnDimensions: 'Abmessungen',
+    columnQuantity: 'Menge',
+    columnLoad: 'Ladung',
+    assembledCaption: 'Bereits gebildete Ladungen',
+    loadNumber: 'Ladung {position}',
+    palletCaption_one: '{count} Packstück · {fill} voll · {weight} kg',
+    palletCaption_other: '{count} Packstücke · {fill} voll · {weight} kg',
   },
 
   import: {

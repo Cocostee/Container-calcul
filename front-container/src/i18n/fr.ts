@@ -252,6 +252,28 @@ export const fr = {
     hint: 'Sélectionnez toutes les palettes pour comparer leurs volumes transparents : la vue éclatée s’active pour faciliter l’inspection. Les flèches et la traverse colorée indiquent le sens de la palette.',
     legendTitle: 'Une couleur par ligne de colis',
     legendUnlabelled: 'Colis sans référence',
+    legendSelected: 'Isoler cette commande dans la vue',
+    legendClear: 'Revenir à toutes les couleurs',
+  },
+
+  print: {
+    close: 'Fermer',
+    action: 'Imprimer / Enregistrer en PDF',
+    notFound: 'Projet introuvable.',
+    noResult: 'Aucun plan calculé pour ce projet.',
+    generatedAt: 'Généré le {date}',
+    containersLabel: 'Conteneurs',
+    volumeLabel: 'Remplissage volumique',
+    weightLabel: 'Remplissage pondéral',
+    unplacedLabel: 'Colis non répartis',
+    columnPackage: 'Colis',
+    columnDimensions: 'Dimensions',
+    columnQuantity: 'Quantité',
+    columnLoad: 'Charge',
+    assembledCaption: 'Charges déjà montées',
+    loadNumber: 'Charge {position}',
+    palletCaption_one: '{count} colis · {fill} rempli · {weight} kg',
+    palletCaption_other: '{count} colis · {fill} rempli · {weight} kg',
   },
 
   import: {

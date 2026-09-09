@@ -132,6 +132,8 @@ export function Scene({
   const [displayMode, setDisplayMode] = useState<DisplayMode>('container')
   const [selectedPalletId, setSelectedPalletId] =
     useState<string>(ALL_PALLETS_VALUE)
+  // Le groupe isolé par un clic sur la légende ; `null` montre tout normalement.
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
 
   const allPallets = useMemo(
     () =>
@@ -224,7 +226,13 @@ export function Scene({
 
   return (
     <div className="scene3d">
-      <ColorLegend entries={legend} />
+      <ColorLegend
+        entries={legend}
+        selectedKey={highlightedKey}
+        onToggle={(key) =>
+          setHighlightedKey((current) => (current === key ? null : key))
+        }
+      />
       <div className="scene3d__toolbar">
         <div
           className="scene3d__views"
@@ -414,6 +422,10 @@ export function Scene({
                   colorByPaletteType(packagePlacement.package_id)
                 }
                 label={packagePlacement.label ?? packagePlacement.package_id}
+                dimmed={
+                  highlightedKey !== null &&
+                  packageColorKey(packagePlacement) !== highlightedKey
+                }
               />
             )
           })

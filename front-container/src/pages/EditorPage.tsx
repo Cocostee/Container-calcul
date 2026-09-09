@@ -34,6 +34,7 @@ import type { PlacementResult } from '../types/placement.types'
 import {
   NEW_PROJECT_ID,
   newProjectStepPath,
+  printPlanPath,
   projectStepPath,
 } from '../router/workflowRoutes'
 
@@ -596,6 +597,23 @@ export function EditorPage() {
                 onClick={handleStartRename}
               >
                 {t('common.rename')}
+              </Button>
+            ) : null}
+            {currentStep === 3 && optimization.result && editor.projectId ? (
+              <Button
+                variant="ghost"
+                icon="file-download-outline"
+                onClick={() => {
+                  // Son propre onglet : l'assistant reste intact pendant que
+                  // le navigateur imprime ou enregistre en PDF.
+                  window.open(
+                    printPlanPath(editor.projectId as string),
+                    '_blank',
+                    'noopener',
+                  )
+                }}
+              >
+                {t('print.action')}
               </Button>
             ) : null}
             <div

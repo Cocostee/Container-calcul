@@ -7,10 +7,18 @@ interface PackageMeshProps {
   size: [number, number, number]
   color: string
   label: string
+  /** Un autre groupe est isolé par la légende : celui-ci s'efface sans disparaître. */
+  dimmed?: boolean
 }
 
 /** Un colis, dévoilé dans la palette montée que l'on inspecte. */
-export function PackageMesh({ position, size, color, label }: PackageMeshProps) {
+export function PackageMesh({
+  position,
+  size,
+  color,
+  label,
+  dimmed = false,
+}: PackageMeshProps) {
   const { t } = useTranslation()
   const [hovered, setHovered] = useState(false)
 
@@ -24,7 +32,12 @@ export function PackageMesh({ position, size, color, label }: PackageMeshProps) 
       onPointerOut={() => setHovered(false)}
     >
       <boxGeometry args={size} />
-      <meshStandardMaterial color={color} roughness={0.62} />
+      <meshStandardMaterial
+        color={color}
+        roughness={0.62}
+        transparent={dimmed}
+        opacity={dimmed ? 0.14 : 1}
+      />
       <Edges color={hovered ? '#ffffff' : '#172f30'} lineWidth={1} />
       {hovered ? (
         <Html center distanceFactor={8} className="mesh-tooltip">
