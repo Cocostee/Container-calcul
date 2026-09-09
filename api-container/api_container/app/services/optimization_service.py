@@ -1,7 +1,7 @@
 """Service - spread the packages across the containers and persist the plan."""
 import json
 import uuid
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
@@ -64,6 +64,11 @@ class OptimizationService:
 
         packages = self._explode(request.packages)
         containers = list(request.containers)
+        # The colour legend in the 3D view groups packages by this label
+        # (typically the order code): recovered per exploded item below.
+        package_labels = {
+            entry.instance_id: entry.label for entry in request.packages
+        }
 
         if request.auto_extend:
             # Clone the last container until nothing is left on the dock, and
@@ -74,7 +79,7 @@ class OptimizationService:
         else:
             result = load_containers(self._to_slots(containers), packages)
 
-        response = self._build_response(containers, result, project)
+        response = self._build_response(containers, result, project, package_labels)
 
         entity = PlacementResult(
             project_id=project.id,
@@ -196,6 +201,7 @@ class OptimizationService:
         containers: List[OptimizeContainerInput],
         result: MultiLoadResult,
         project: Project,
+        package_labels: Dict[str, Optional[str]],
     ) -> OptimizeResponse:
         """Assemble the public plan, container by container."""
         loads: List[ContainerLoadSchema] = []
@@ -218,7 +224,9 @@ class OptimizationService:
                     pallet_label=(
                         entry.pallet.label if entry.pallet else None
                     ),
-                    pallets=self._build_generated_pallets(entry.pallet, loaded),
+                    pallets=self._build_generated_pallets(
+                        entry.pallet, loaded, package_labels
+                    ),
                     placements=self._to_container_placements(loaded.placements),
                     fill_rate_volume=round(
                         loaded.fill_rate_volume, _RATE_DECIMALS
@@ -282,7 +290,9 @@ class OptimizationService:
 
     @staticmethod
     def _build_generated_pallets(
-        pallet: Optional[PalletDimensions], loaded: LoadedContainer
+        pallet: Optional[PalletDimensions],
+        loaded: LoadedContainer,
+        package_labels: Dict[str, Optional[str]],
     ) -> List[GeneratedPalletSchema]:
         """Describe each loaded pallet and the packages it carries.
 
@@ -300,6 +310,12 @@ class OptimizationService:
             packages = [
                 PackagePlacementSchema(
                     package_id=placement.item_id,
+                    # item_id is "<instance_id>-<index>"; instance_id itself
+                    # may hold hyphens (it is a UUID), so only the last
+                    # segment is the exploded index to strip.
+                    label=package_labels.get(
+                        placement.item_id.rsplit("-", 1)[0]
+                    ),
                     palette_instance_id=packed.id,
                     x=placement.x,
                     y=placement.y,

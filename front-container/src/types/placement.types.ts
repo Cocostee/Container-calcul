@@ -13,6 +13,8 @@ export interface Placement {
 
 export interface PackagePlacement extends Placement {
   package_id: string
+  /** Le libellé de la ligne de colis d'origine (ex. le code de commande). */
+  label?: string | null
 }
 
 export interface GeneratedPallet {

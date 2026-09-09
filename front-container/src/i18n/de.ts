@@ -245,6 +245,8 @@ export const de: Messages = {
     palletizationHint: 'Alle Paletten stehen einzeln, damit Sie die Packstücke prüfen können. Ziehen Sie die Ansicht, um sie zu betrachten. Pfeile und farbiger Balken zeigen die Ausrichtung der Palette und die Einfahrt der Gabeln.',
     palletizationAriaLabel: '3D-Ansicht der erzeugten Paletten und aller Packstücke',
     hint: 'Wählen Sie alle Paletten, um ihre transparenten Volumen zu vergleichen: die Explosionsansicht schaltet sich ein und erleichtert die Prüfung. Pfeile und farbiger Balken zeigen die Ausrichtung der Palette.',
+    legendTitle: 'Eine Farbe pro Packstückzeile',
+    legendUnlabelled: 'Packstück ohne Referenz',
   },
 
   import: {

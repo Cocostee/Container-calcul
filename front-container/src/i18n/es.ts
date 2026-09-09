@@ -245,6 +245,8 @@ export const es: Messages = {
     palletizationHint: 'Todos los palés están separados para revisar los bultos a la vista. Arrastre la vista para inspeccionarlos. Las flechas y el travesaño de color indican la orientación del palé y la entrada de las horquillas.',
     palletizationAriaLabel: 'Vista 3D de los palés generados y de todos sus bultos',
     hint: 'Seleccione todos los palés para comparar sus volúmenes transparentes: la vista explosionada se activa para facilitar la inspección. Las flechas y el travesaño de color indican la orientación del palé.',
+    legendTitle: 'Un color por línea de bulto',
+    legendUnlabelled: 'Bulto sin referencia',
   },
 
   import: {

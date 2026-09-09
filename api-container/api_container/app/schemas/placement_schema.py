@@ -21,6 +21,7 @@ class OptimizePaletteInput(BaseModel):
     """One package group to place (quantity is exploded server-side)."""
 
     instance_id: str
+    label: Optional[str] = None
     length_cm: float = Field(..., gt=0)
     width_cm: float = Field(..., gt=0)
     height_cm: float = Field(..., gt=0)
@@ -87,6 +88,7 @@ class PackagePlacementSchema(PlacementSchema):
     """Placement of a package within a generated pallet."""
 
     package_id: str
+    label: Optional[str] = None
 
 
 class GeneratedPalletSchema(BaseModel):

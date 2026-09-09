@@ -245,6 +245,8 @@ export const en: Messages = {
     palletizationHint: 'Every pallet is set apart so you can check the packages by eye. Drag the view to inspect them. The arrows and the coloured beam show which way the pallet faces and where the forks go in.',
     palletizationAriaLabel: '3D view of the generated pallets and all their packages',
     hint: 'Select all pallets to compare their transparent volumes: the exploded view turns on to make inspection easier. The arrows and the coloured beam show which way the pallet faces.',
+    legendTitle: 'One colour per package line',
+    legendUnlabelled: 'Unreferenced package',
   },
 
   import: {

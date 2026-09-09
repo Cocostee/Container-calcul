@@ -1122,6 +1122,63 @@
   backdrop-filter: blur(10px);
 }
 
+/* Ce que chaque couleur veut dire, posée à l'opposé de la légende ci-dessus
+   pour ne jamais se chevaucher : une ligne de colis, un carré de couleur. */
+.pallet-color-legend {
+  position: absolute;
+  bottom: var(--space-3);
+  left: var(--space-3);
+  z-index: 1;
+  max-width: 220px;
+  max-height: 40%;
+  padding: var(--space-2) var(--space-3);
+  overflow-y: auto;
+  color: rgba(255, 255, 255, 0.86);
+  background: rgba(8, 26, 36, 0.66);
+  border-radius: var(--radius-chip);
+  backdrop-filter: blur(10px);
+}
+
+.pallet-color-legend__title {
+  margin: 0 0 4px;
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.pallet-color-legend ul {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.pallet-color-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-2xs);
+  line-height: 1.3;
+}
+
+.pallet-color-legend__swatch {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+}
+
+.pallet-color-legend__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ======================================================================
    ÉTAPE 1 — cadrer le calcul
    ====================================================================== */
@@ -1816,7 +1873,8 @@
   }
 
   .scene3d__hint,
-  .palletization-scene__hint {
+  .palletization-scene__hint,
+  .pallet-color-legend {
     display: none;
   }
 }

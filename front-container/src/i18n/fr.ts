@@ -250,6 +250,8 @@ export const fr = {
     palletizationHint: 'Toutes les palettes sont séparées pour contrôler visuellement les colis. Faites glisser la vue pour les inspecter. Les flèches et la traverse colorée indiquent le sens de la palette et l’entrée des fourches.',
     palletizationAriaLabel: 'Vue 3D des palettes générées et de tous leurs colis',
     hint: 'Sélectionnez toutes les palettes pour comparer leurs volumes transparents : la vue éclatée s’active pour faciliter l’inspection. Les flèches et la traverse colorée indiquent le sens de la palette.',
+    legendTitle: 'Une couleur par ligne de colis',
+    legendUnlabelled: 'Colis sans référence',
   },
 
   import: {

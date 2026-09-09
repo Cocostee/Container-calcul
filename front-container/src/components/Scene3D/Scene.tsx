@@ -9,8 +9,14 @@ import type {
 } from '../../types/placement.types'
 import { useTranslation } from '../../i18n'
 import type { IconName } from '../ui/Icon'
-import { colorByPaletteType } from '../../utils/colorByPaletteType'
+import {
+  assignPackageColors,
+  colorByPaletteType,
+  packageColorKey,
+} from '../../utils/colorByPaletteType'
+import { buildPackageLegend } from '../../utils/packageLegend'
 import { Button } from '../ui/Button/Button'
+import { ColorLegend } from './ColorLegend'
 import { ContainerMesh } from './ContainerMesh'
 import { PackageMesh } from './PackageMesh'
 import { PaletteMesh } from './PaletteMesh'
@@ -158,6 +164,14 @@ export function Scene({
     0,
   )
   const hasPackageDetails = totalPackageCount > 0
+  const visiblePackages = palletsToInspect.flatMap(
+    ({ pallet }) => pallet.packages,
+  )
+  // Une seule attribution pour tout ce qui est affiché : la scène et la
+  // légende doivent peindre chaque groupe de la même couleur, jamais deux
+  // groupes sous la même.
+  const packageColors = assignPackageColors(visiblePackages)
+  const legend = buildPackageLegend(visiblePackages, packageColors)
 
   const length = container.length_cm * SCALE
   const width = container.width_cm * SCALE
@@ -210,6 +224,7 @@ export function Scene({
 
   return (
     <div className="scene3d">
+      <ColorLegend entries={legend} />
       <div className="scene3d__toolbar">
         <div
           className="scene3d__views"
@@ -394,8 +409,11 @@ export function Scene({
                   packagePlacement.height * SCALE,
                   packagePlacement.width * SCALE,
                 ]}
-                color={colorByPaletteType(packagePlacement.package_id)}
-                label={packagePlacement.package_id}
+                color={
+                  packageColors.get(packageColorKey(packagePlacement)) ??
+                  colorByPaletteType(packagePlacement.package_id)
+                }
+                label={packagePlacement.label ?? packagePlacement.package_id}
               />
             )
           })

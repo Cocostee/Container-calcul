@@ -197,6 +197,10 @@ export function ImportPlanPage() {
       const result = await optimize(project.id, {
         packages: project.packages.map((line, index) => ({
           instance_id: String(line.id ?? index),
+          // Le code de commande vit dans ce libellé (voir toOptimizeInput
+          // plus haut) : sans lui, la légende de couleurs de la vue 3D
+          // n'aurait rien à afficher.
+          label: line.label,
           length_cm: line.length_cm,
           width_cm: line.width_cm,
           height_cm: line.height_cm,

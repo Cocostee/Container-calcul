@@ -384,6 +384,7 @@ export function useProjectEditor() {
       return {
         packages: lot.map((item) => ({
           instance_id: item.clientId,
+          label: item.label,
           length_cm: item.length_cm,
           width_cm: item.width_cm,
           height_cm: item.height_cm,

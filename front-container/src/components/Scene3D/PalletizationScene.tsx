@@ -4,12 +4,21 @@ import { useEffect, useMemo } from 'react'
 
 import { useTranslation } from '../../i18n'
 import type { GeneratedPallet } from '../../types/placement.types'
-import { colorByPaletteType } from '../../utils/colorByPaletteType'
+import {
+  assignPackageColors,
+  colorByPaletteType,
+  packageColorKey,
+} from '../../utils/colorByPaletteType'
+import { buildPackageLegend } from '../../utils/packageLegend'
+import { ColorLegend } from './ColorLegend'
 import { PackageMesh } from './PackageMesh'
 import { PaletteMesh } from './PaletteMesh'
 
 // Centimetres to scene units (metres).
 const SCALE = 0.01
+// Shave a little off every package so neighbours (and the pallet deck around a
+// single package) stay visible instead of fusing into one solid block.
+const PACKAGE_GAP_CM = 4
 
 interface PalletizationSceneProps {
   pallets: GeneratedPallet[]
@@ -71,8 +80,25 @@ export function PalletizationScene({ pallets }: PalletizationSceneProps) {
     return { distance, positionFor, target }
   }, [pallets])
 
+  const allPackages = useMemo(
+    () => pallets.flatMap((pallet) => pallet.packages),
+    [pallets],
+  )
+  // Une seule attribution pour tout le lot visible : la scène et la légende
+  // doivent peindre chaque groupe de la même couleur, jamais deux groupes
+  // sous la même.
+  const packageColors = useMemo(
+    () => assignPackageColors(allPackages),
+    [allPackages],
+  )
+  const legend = useMemo(
+    () => buildPackageLegend(allPackages, packageColors),
+    [allPackages, packageColors],
+  )
+
   return (
     <div className="palletization-scene">
+      <ColorLegend entries={legend} />
       <p className="palletization-scene__hint">
         {t('scene.palletizationHint')}
       </p>
@@ -123,12 +149,16 @@ export function PalletizationScene({ pallets }: PalletizationSceneProps) {
                       (packagePlacement.y + packagePlacement.width / 2) * SCALE,
                   ]}
                   size={[
-                    packagePlacement.length * SCALE,
+                    Math.max(packagePlacement.length - PACKAGE_GAP_CM, 5) *
+                      SCALE,
                     packagePlacement.height * SCALE,
-                    packagePlacement.width * SCALE,
+                    Math.max(packagePlacement.width - PACKAGE_GAP_CM, 5) * SCALE,
                   ]}
-                  color={colorByPaletteType(packagePlacement.package_id)}
-                  label={packagePlacement.package_id}
+                  color={
+                    packageColors.get(packageColorKey(packagePlacement)) ??
+                    colorByPaletteType(packagePlacement.package_id)
+                  }
+                  label={packagePlacement.label ?? packagePlacement.package_id}
                 />
               ))}
             </group>
