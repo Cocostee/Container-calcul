@@ -36,41 +36,47 @@ def create_tables() -> None:
     from api_container.app import models  # noqa: F401  (registers mappers)
 
     Base.metadata.create_all(bind=engine)
-    _upgrade_projects_table()
     _upgrade_placement_results_table()
 
 
-def _upgrade_projects_table() -> None:
-    """Add the selected pallet type to projects created before stage one."""
-    columns = {column["name"] for column in inspect(engine).get_columns("projects")}
-    if "pallet_type_id" not in columns:
-        with engine.begin() as connection:
-            connection.execute(
-                text("ALTER TABLE projects ADD COLUMN pallet_type_id VARCHAR")
-            )
-
-
 def _upgrade_placement_results_table() -> None:
-    """Add JSON detail columns on databases created before palletization.
+    """Bring a plan table created before the multi-container model up to date.
 
-    The project intentionally has no migration framework yet.  This guarded,
-    idempotent upgrade keeps existing Docker volumes usable while the detailed
-    stage-one result is added to the persisted optimization response.
+    The project has no migration framework: ``create_all`` creates missing
+    tables but never alters an existing one. A volume that ran the previous
+    version therefore keeps the single-container shape, where the plan was a
+    flat ``placements`` list, and every new plan would fail to insert.
+
+    Two things are needed, both idempotent:
+
+    * add the columns the current model writes;
+    * lift the ``NOT NULL`` on the columns it no longer writes, otherwise the
+      insert is rejected by constraints on data that has no meaning any more.
+
+    A plan is a cache, always recomputable, so the legacy columns are left in
+    place rather than dropped: nothing is lost by keeping them.
     """
     columns = {
-        column["name"] for column in inspect(engine).get_columns("placement_results")
+        column["name"]: column
+        for column in inspect(engine).get_columns("placement_results")
     }
     statements = []
-    if "pallets" not in columns:
+    if "containers" not in columns:
         statements.append(
             "ALTER TABLE placement_results "
-            "ADD COLUMN pallets JSON NOT NULL DEFAULT '[]'"
+            "ADD COLUMN containers JSON NOT NULL DEFAULT '[]'"
         )
     if "unplaced_package_count" not in columns:
         statements.append(
             "ALTER TABLE placement_results "
             "ADD COLUMN unplaced_package_count INTEGER NOT NULL DEFAULT 0"
         )
+    for legacy in ("placements", "unplaced_count"):
+        column = columns.get(legacy)
+        if column is not None and not column["nullable"]:
+            statements.append(
+                f"ALTER TABLE placement_results ALTER COLUMN {legacy} DROP NOT NULL"
+            )
     if statements:
         with engine.begin() as connection:
             for statement in statements:

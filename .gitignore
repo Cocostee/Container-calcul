@@ -1,5 +1,6 @@
-# Surcharge locale de Compose : elle décale le port de la base parce que le
-# 5432 est souvent déjà pris. C'est un réglage de poste, pas du projet.
+# Surcharge locale de Compose : de quoi adapter un port ou un volume à son
+# poste sans toucher au projet. Rien d'indispensable n'y vit -- le dépôt doit
+# démarrer sans elle, sinon le voisin qui clone se retrouve sans API.
 docker-compose.override.yml
 
 # Les deux services ont leur propre .gitignore pour leurs artefacts

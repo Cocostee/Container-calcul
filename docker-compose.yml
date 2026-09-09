@@ -32,8 +32,12 @@ services:
       - POSTGRES_USER=app_user
       - POSTGRES_PASSWORD=app_password
       - POSTGRES_DB=container_app
+    # 5433 et non 5432 : un PostgreSQL local occupe souvent le port standard,
+    # et un conflit ici empêche la base de démarrer -- donc l'API aussi, qui
+    # l'attend en bonne santé. Le conteneur écoute toujours 5432 sur le réseau
+    # Compose, où l'API le joint.
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:

@@ -20,6 +20,11 @@ RUN pip install \
     "sqlalchemy~=2.0.0" \
     "psycopg2-binary~=2.9.0"
 
+# Test tooling, mirroring [tool.poetry.group.dev.dependencies]. It belongs in
+# this image: `docker compose exec backend python -m pytest` is the documented
+# way to run the suite, and a freshly built container has to answer it.
+RUN pip install     "pytest~=7.4.0"     "pytest-cov~=4.0.0"     "pytest-asyncio~=0.21.0"
+
 COPY . .
 
 EXPOSE 8000

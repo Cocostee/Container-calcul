@@ -110,18 +110,29 @@ Reference seed complete from /app/reference-data.json (0 new, 1 updated).
 | API | 8000 | 8000 |
 | PostgreSQL | **5433** | 5432 |
 
-Le décalage de la base vient de `docker-compose.override.yml` : le 5432 est
-souvent déjà pris par un PostgreSQL local.
+Le décalage de la base est dans `docker-compose.yml` lui-même. Le 5432 est
+souvent déjà pris par un PostgreSQL local, et le conflit ne se voit pas où on
+l'attend : la base refuse de démarrer, l'API l'attend en bonne santé et reste
+donc à l'arrêt, si bien que l'interface s'ouvre normalement et échoue sur
+chaque appel avec une erreur réseau.
+
+Le port publié ne sert qu'à un client installé sur le poste : l'API joint la
+base par le réseau Compose, où elle écoute toujours 5432.
+
+Pour un réglage propre à un poste, `docker-compose.override.yml` est ignoré par
+Git — mais rien d'indispensable ne doit y vivre, sinon le dépôt ne démarre pas
+chez le voisin qui clone. C'est arrivé : le décalage de port a vécu là un
+temps, et l'API restait à l'arrêt sur tout autre poste. Si une surcharge
+touche une liste (les ports, par exemple), la balise `!override` est
+nécessaire : sans elle, Compose *fusionne* les deux listes et publie les deux
+ports.
 
 ```yaml
 services:
   db:
     ports: !override
-      - "5433:5432"
+      - "15432:5432"
 ```
-
-La balise `!override` est **nécessaire**. Sans elle, Compose *fusionne* les
-listes de ports et publie les deux, ce qui échoue si le 5432 est occupé.
 
 ---
 

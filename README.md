@@ -49,13 +49,44 @@ docker compose up --build
 | Documentation interactive de l'API | <http://localhost:8000/docs> |
 | PostgreSQL | `localhost:5433` |
 
-Le port **5433** vient de `docker-compose.override.yml` : le 5432 est
-fréquemment occupé par un PostgreSQL local. La balise `!override` y est
-nécessaire — sans elle, Compose *fusionne* les listes de ports et publie les
-deux.
+La base est publiée sur **5433** et non sur 5432 : le port standard est
+fréquemment occupé par un PostgreSQL local, et le conflit empêcherait la base
+de démarrer — donc l'API aussi, qui l'attend en bonne santé.
 
 Le code des deux services est monté dans les conteneurs : le rechargement à
 chaud fonctionne, on n'a pas à reconstruire pour une modification.
+
+### Si l'interface s'ouvre mais qu'une erreur réseau tombe à chaque écran
+
+L'interface est un client de l'API : elle se charge toute seule, puis échoue
+sur chaque appel. Une erreur *réseau* (et non un message venu de l'API) veut
+dire qu'aucune réponse n'est arrivée. Trois causes, dans l'ordre :
+
+```bash
+docker compose ps          # l'API est-elle seulement debout ?
+docker compose logs backend --tail=40
+```
+
+1. **L'API n'est pas démarrée.** Elle attend la base en bonne santé : si le
+   port de la base est occupé sur le poste, la base ne démarre pas et l'API
+   reste à l'arrêt. Le symptôme est exactement celui-ci — le front répond,
+   l'API n'existe pas.
+2. **Les dépendances du front datent.** Le volume `node_modules` survit à un
+   `up`, même avec `--build` : après un `pull` qui ajoute une bibliothèque,
+   il faut le renouveler.
+   ```bash
+   docker compose up --build -V     # -V : renouvelle les volumes anonymes
+   ```
+3. **L'adresse d'ouverture.** L'API n'accepte que `localhost:5173` et
+   `127.0.0.1:5173`. Ouvrir l'interface par l'IP du poste fait refuser les
+   appels par le navigateur, ce qui se lit aussi « erreur réseau ». Pour
+   ouvrir depuis une autre machine, ajouter l'origine à `CORS_ORIGINS`
+   (`api-container/api_container/config/application.py`) et pointer
+   `VITE_API_URL` sur la même machine.
+
+Une base qui vient de la version précédente est reprise automatiquement au
+démarrage ; `docker compose down -v` reste la sortie franche si on préfère
+repartir à vide.
 
 ---
 
@@ -86,7 +117,6 @@ docker compose down -v                        # repartir d'une base vierge
 ```
 Container-calcul/
 ├── docker-compose.yml            trois services : front, api, base
-├── docker-compose.override.yml   le port de la base, décalé
 │
 ├── api-container/                l'API
 │   ├── reference-data.json       ← les tailles de conteneurs et de palettes
