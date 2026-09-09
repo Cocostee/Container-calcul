@@ -66,17 +66,40 @@ function layersOf(packages: PackagePlacement[]): number[] {
 }
 
 /**
+ * L'écart demandé, réduit si besoin pour que le colis ne dépasse jamais son
+ * bord du côté où il pousse : `pos` et `pos + size` doivent rester dans
+ * `[0, limit]` une fois l'écart appliqué. Un colis déjà contre un bord n'a
+ * ainsi aucune marge de ce côté, et ne traverse jamais la palette.
+ */
+function clampToRoom(
+  pos: number,
+  size: number,
+  limit: number,
+  desired: number,
+): number {
+  if (desired > 0) return Math.max(0, Math.min(desired, limit - (pos + size)))
+  if (desired < 0) return Math.min(0, Math.max(desired, -pos))
+  return 0
+}
+
+/**
  * Écarte chaque colis de son point de pose, en l'éloignant du centre du lot
- * dans les trois axes — sans jamais toucher à sa taille. C'est le principe
- * de la vue éclatée déjà utilisée ailleurs dans l'application, appliqué ici
- * aux colis d'une même palette plutôt qu'aux palettes d'un conteneur.
+ * dans les trois axes — sans jamais toucher à sa taille, et sans jamais le
+ * pousser hors de la palette (le sol de la charge, à `base_height`, borne le
+ * bas — un colis du premier niveau n'a aucune marge pour s'enfoncer). C'est
+ * le principe de la vue éclatée déjà utilisée ailleurs dans l'application,
+ * appliqué ici aux colis d'une même palette plutôt qu'aux palettes d'un
+ * conteneur.
  */
 function explodeOffsets(
-  packages: PackagePlacement[],
+  pallet: GeneratedPallet,
   gapCm: number,
 ): Map<string, Vec3> {
+  const packages = pallet.packages
   const offsets = new Map<string, Vec3>()
   if (packages.length === 0 || gapCm === 0) return offsets
+
+  const loadHeight = pallet.height - pallet.base_height
 
   const centroid = packages.reduce(
     (acc, item) => [
@@ -102,16 +125,20 @@ function explodeOffsets(
       center[2] - centroid[2],
     ]
     const magnitude = Math.hypot(direction[0], direction[1], direction[2])
-    offsets.set(
-      item.package_id,
+    const desired: Vec3 =
       magnitude > 1e-6
         ? [
             (direction[0] / magnitude) * gapCm,
             (direction[1] / magnitude) * gapCm,
             (direction[2] / magnitude) * gapCm,
           ]
-        : [0, 0, 0],
-    )
+        : [0, 0, 0]
+
+    offsets.set(item.package_id, [
+      clampToRoom(item.x, item.length, pallet.length, desired[0]),
+      clampToRoom(item.y, item.width, pallet.width, desired[1]),
+      clampToRoom(item.z, item.height, loadHeight, desired[2]),
+    ])
   }
 
   return offsets
@@ -157,7 +184,7 @@ export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
   const layerOf = (z: number): number => layers.indexOf(Math.round(z)) + 1
 
   const offsets = useMemo(
-    () => explodeOffsets(current?.pallet.packages ?? [], gapCm),
+    () => (current ? explodeOffsets(current.pallet, gapCm) : new Map()),
     [current, gapCm],
   )
 
