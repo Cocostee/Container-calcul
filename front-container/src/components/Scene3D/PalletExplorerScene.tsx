@@ -225,7 +225,12 @@ export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
   if (!current) return null
 
   const { pallet } = current
-  const palletBottom = -(pallet.height * SCALE) / 2
+  /*
+   * La palette est posée sur le sol de la scène : son groupe est centré à
+   * mi-hauteur (voir sa `position` plus bas), donc son bas est à zéro et la
+   * face du plateau — sur laquelle reposent les colis — est à `base_height`.
+   */
+  const deckTopY = pallet.base_height * SCALE
 
   return (
     <div className="pallet-explorer">
@@ -385,8 +390,7 @@ export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
                       packagePlacement.length / 2 +
                       offset[0]) *
                       SCALE,
-                  palletBottom +
-                    pallet.base_height * SCALE +
+                  deckTopY +
                     (packagePlacement.z +
                       packagePlacement.height / 2 +
                       offset[2]) *
