@@ -89,7 +89,7 @@
   flex: 0 0 auto;
   width: 3px;
   height: 0.85em;
-  content: '';
+  content: "";
   background: var(--accent);
   border-radius: var(--radius-mark);
 }
@@ -514,7 +514,6 @@
   padding: var(--space-4);
 }
 
-
 .sidebar-section--projects {
   gap: var(--space-2);
 }
@@ -811,7 +810,7 @@
 /* L'étape en cours se marque au jalon, pas par un cadre autour de sa
    colonne : son titre passe simplement en ambre. */
 .workflow-steps
-  .MuiStepButton-root[aria-current='step']
+  .MuiStepButton-root[aria-current="step"]
   .MuiStepLabel-labelContainer
   strong {
   color: var(--accent-text);
@@ -1093,7 +1092,7 @@
   left: -30%;
   z-index: 2;
   width: 26%;
-  content: '';
+  content: "";
   pointer-events: none;
   background: linear-gradient(
     90deg,
@@ -1922,6 +1921,10 @@
   list-style: none;
 }
 
+.container-list__add {
+  margin-top: var(--space-6);
+}
+
 .container-card {
   display: flex;
   flex-direction: column;
@@ -2047,6 +2050,10 @@
   border-radius: var(--radius-panel);
   box-shadow: var(--shadow-md);
   backdrop-filter: blur(var(--glass-blur));
+}
+
+.loading-plan__add {
+  margin-top: var(--space-6);
 }
 
 /* Un conteneur à la fois : au quatrième, une pile verticale obligeait à

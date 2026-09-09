@@ -1,49 +1,49 @@
-import MobileStepper from '@mui/material/MobileStepper'
+import MobileStepper from "@mui/material/MobileStepper";
 
-import { useTranslation } from '../i18n'
-import type { ContainerType } from '../types/container.types'
-import type { PaletteType } from '../types/palette.types'
+import { useTranslation } from "../i18n";
+import type { ContainerType } from "../types/container.types";
+import type { PaletteType } from "../types/palette.types";
 import type {
   ContainerLoad,
   PlacementResult,
   SizeAdvice,
-} from '../types/placement.types'
-import type { ContainerDraft } from '../types/project.types'
-import { formatPercent } from '../utils/formatVolume'
-import { ContainerSizeFields } from './ContainerSizeFields'
-import { Badge } from './ui/Badge/Badge'
-import { Button } from './ui/Button/Button'
-import { PanelHeading } from './PanelHeading'
-import { Icon } from './ui/Icon'
+} from "../types/placement.types";
+import type { ContainerDraft } from "../types/project.types";
+import { formatPercent } from "../utils/formatVolume";
+import { ContainerSizeFields } from "./ContainerSizeFields";
+import { PanelHeading } from "./PanelHeading";
+import { Badge } from "./ui/Badge/Badge";
+import { Button } from "./ui/Button/Button";
+import { Icon } from "./ui/Icon";
 
 interface LoadingPlanProps {
-  result: PlacementResult
-  containers: ContainerDraft[]
-  containerTypes: ContainerType[]
-  palletTypes: PaletteType[]
-  advice: SizeAdvice | null
-  selectedPosition: number
-  onSelect: (position: number) => void
-  onAddContainer: () => void
-  onRemoveContainer: (clientId: string) => void
-  onChangeContainer: (clientId: string, patch: Partial<ContainerDraft>) => void
+  result: PlacementResult;
+  containers: ContainerDraft[];
+  containerTypes: ContainerType[];
+  palletTypes: PaletteType[];
+  advice: SizeAdvice | null;
+  selectedPosition: number;
+  onSelect: (position: number) => void;
+  onAddContainer: () => void;
+  onRemoveContainer: (clientId: string) => void;
+  onChangeContainer: (clientId: string, patch: Partial<ContainerDraft>) => void;
   onCustomDimChange: (
     clientId: string,
-    field: 'length_cm' | 'width_cm' | 'height_cm' | 'max_weight_kg',
+    field: "length_cm" | "width_cm" | "height_cm" | "max_weight_kg",
     value: number,
-  ) => void
+  ) => void;
   /** Ce que le calcul a ajouté de lui-même, ou rétabli après suppression. */
-  fleetNotice: { kind: 'added' | 'restored'; count: number } | null
+  fleetNotice: { kind: "added" | "restored"; count: number } | null;
   /** Le format de palette retenu ne peut pas porter tout le lot. */
   palletBlockage: {
-    name: string
-    count: number
-    better: { id: string; name: string } | null
-  } | null
-  onUsePallet: (palletTypeId: string) => void
+    name: string;
+    count: number;
+    better: { id: string; name: string } | null;
+  } | null;
+  onUsePallet: (palletTypeId: string) => void;
   /** Un conteneur de plus n'a rien changé : la taille est en cause. */
-  dockIsStuck: boolean
-  onChangeSizes: () => void
+  dockIsStuck: boolean;
+  onChangeSizes: () => void;
 }
 
 /**
@@ -74,14 +74,14 @@ export function LoadingPlan({
   dockIsStuck,
   onChangeSizes,
 }: LoadingPlanProps) {
-  const { t } = useTranslation()
-  const leftOver = result.unplaced_package_count
+  const { t } = useTranslation();
+  const leftOver = result.unplaced_package_count;
   /* Constante, pour que le type reste affiné dans le gestionnaire de clic. */
-  const betterPallet = palletBlockage?.better ?? null
+  const betterPallet = palletBlockage?.better ?? null;
 
-  const total = result.containers.length
-  const index = Math.min(Math.max(selectedPosition, 1), total) - 1
-  const load = result.containers[index]
+  const total = result.containers.length;
+  const index = Math.min(Math.max(selectedPosition, 1), total) - 1;
+  const load = result.containers[index];
 
   /**
    * Le conteneur déclaré derrière la carte affichée. L'identifiant enregistré
@@ -90,16 +90,16 @@ export function LoadingPlan({
   const draft =
     containers.find((entry) => entry.persistedId === load?.container_id) ??
     containers[index] ??
-    null
+    null;
 
   return (
     <section className="loading-plan" aria-labelledby="loading-plan-title">
       <PanelHeading
         icon="chart-pie-outline"
-        eyebrow={t('plan.eyebrow')}
-        title={t('plan.title')}
+        eyebrow={t("plan.eyebrow")}
+        title={t("plan.title")}
         titleId="loading-plan-title"
-        meta={t('plan.containerCount', { count: total })}
+        meta={t("plan.containerCount", { count: total })}
       />
 
       {load ? (
@@ -125,22 +125,22 @@ export function LoadingPlan({
           backButton={
             <Button
               variant="ghost"
-              aria-label={t('plan.previousContainer')}
+              aria-label={t("plan.previousContainer")}
               disabled={index === 0}
               onClick={() => onSelect(index)}
             >
               <Icon name="caret-left-solid" size="sm" tone="inherit" />
-              {t('common.previous')}
+              {t("common.previous")}
             </Button>
           }
           nextButton={
             <Button
               variant="ghost"
-              aria-label={t('plan.nextContainer')}
+              aria-label={t("plan.nextContainer")}
               disabled={index >= total - 1}
               onClick={() => onSelect(index + 2)}
             >
-              {t('common.next')}
+              {t("common.next")}
               <Icon name="caret-right-solid" size="sm" tone="inherit" />
             </Button>
           }
@@ -150,9 +150,9 @@ export function LoadingPlan({
       {fleetNotice ? (
         <p className="plan-notice" role="status">
           <Icon name="info-circle-outline" size="sm" tone="accent" />
-          {fleetNotice.kind === 'restored'
-            ? t('plan.containerRestored', { count: fleetNotice.count })
-            : t('plan.containersAdded', { count: fleetNotice.count })}
+          {fleetNotice.kind === "restored"
+            ? t("plan.containerRestored", { count: fleetNotice.count })
+            : t("plan.containersAdded", { count: fleetNotice.count })}
         </p>
       ) : null}
 
@@ -160,17 +160,17 @@ export function LoadingPlan({
       {leftOver > 0 ? (
         <div className="loading-plan__leftover" role="alert">
           <Badge variant="danger">
-            {t('plan.leftOver', { count: leftOver })}
+            {t("plan.leftOver", { count: leftOver })}
           </Badge>
           <p>
             {palletBlockage
-              ? t('plan.palletBlocked', {
+              ? t("plan.palletBlocked", {
                   name: palletBlockage.name,
                   count: palletBlockage.count,
                 })
               : dockIsStuck
-                ? t('plan.leftOverStuck')
-                : t('plan.leftOverHelp')}
+                ? t("plan.leftOverStuck")
+                : t("plan.leftOverHelp")}
           </p>
           {palletBlockage ? (
             betterPallet ? (
@@ -179,10 +179,10 @@ export function LoadingPlan({
                 icon="layers-outline"
                 onClick={() => onUsePallet(betterPallet.id)}
               >
-                {t('plan.palletSwitch', { name: betterPallet.name })}
+                {t("plan.palletSwitch", { name: betterPallet.name })}
               </Button>
             ) : (
-              <p className="muted">{t('plan.palletNoWay')}</p>
+              <p className="muted">{t("plan.palletNoWay")}</p>
             )
           ) : dockIsStuck ? (
             <Button
@@ -190,36 +190,37 @@ export function LoadingPlan({
               icon="container-outline"
               onClick={onChangeSizes}
             >
-              {t('plan.leftOverChangeSize')}
+              {t("plan.leftOverChangeSize")}
             </Button>
           ) : null}
         </div>
       ) : null}
 
       <Button
-        variant={leftOver > 0 && !palletBlockage ? 'primary' : 'secondary'}
+        variant={leftOver > 0 && !palletBlockage ? "primary" : "secondary"}
         icon="plus-outline"
+        className="loading-plan__add"
         onClick={onAddContainer}
       >
-        {t('containers.add')}
+        {t("containers.add")}
       </Button>
     </section>
-  )
+  );
 }
 
 interface ContainerCardProps {
-  load: ContainerLoad
-  draft: ContainerDraft | null
-  containerTypes: ContainerType[]
-  palletTypes: PaletteType[]
-  advice: SizeAdvice | null
-  onRemove: (clientId: string) => void
-  onChange: (clientId: string, patch: Partial<ContainerDraft>) => void
+  load: ContainerLoad;
+  draft: ContainerDraft | null;
+  containerTypes: ContainerType[];
+  palletTypes: PaletteType[];
+  advice: SizeAdvice | null;
+  onRemove: (clientId: string) => void;
+  onChange: (clientId: string, patch: Partial<ContainerDraft>) => void;
   onCustomDimChange: (
     clientId: string,
-    field: 'length_cm' | 'width_cm' | 'height_cm' | 'max_weight_kg',
+    field: "length_cm" | "width_cm" | "height_cm" | "max_weight_kg",
     value: number,
-  ) => void
+  ) => void;
 }
 
 /**
@@ -237,8 +238,8 @@ function ContainerCard({
   onChange,
   onCustomDimChange,
 }: ContainerCardProps) {
-  const { t } = useTranslation()
-  const isEmpty = load.placements.length === 0
+  const { t } = useTranslation();
+  const isEmpty = load.placements.length === 0;
 
   return (
     <article className="plan-card">
@@ -247,22 +248,24 @@ function ContainerCard({
           {load.position}
         </span>
         <Icon
-          name={load.pallets.length > 0 ? 'layers-outline' : 'container-outline'}
+          name={
+            load.pallets.length > 0 ? "layers-outline" : "container-outline"
+          }
           size="lg"
           tone="primary"
           className="plan-card__glyph"
         />
         <div className="plan-card__body">
-          <h3>{load.container.name ?? t('container.customName')}</h3>
+          <h3>{load.container.name ?? t("container.customName")}</h3>
           <p className="muted">
             {isEmpty
-              ? t('plan.rowEmpty')
+              ? t("plan.rowEmpty")
               : load.pallets.length > 0
-                ? t('plan.rowPallets', {
+                ? t("plan.rowPallets", {
                     pallets: load.pallets.length,
-                    label: load.pallet_label ?? '',
+                    label: load.pallet_label ?? "",
                   })
-                : t('plan.rowLoads', { count: load.placements.length })}
+                : t("plan.rowLoads", { count: load.placements.length })}
           </p>
         </div>
         <p className="plan-card__figures">
@@ -276,7 +279,7 @@ function ContainerCard({
       <span
         className="plan-card__gauge"
         role="progressbar"
-        aria-label={t('plan.rowGauge', { position: load.position })}
+        aria-label={t("plan.rowGauge", { position: load.position })}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(load.fill_rate_volume * 100)}
@@ -303,13 +306,13 @@ function ContainerCard({
             variant="ghost"
             className="plan-card__remove"
             icon="trash-outline"
-            aria-label={t('containers.remove', { position: load.position })}
+            aria-label={t("containers.remove", { position: load.position })}
             onClick={() => onRemove(draft.clientId)}
           >
-            {t('common.delete')}
+            {t("common.delete")}
           </Button>
         </div>
       ) : null}
     </article>
-  )
+  );
 }
