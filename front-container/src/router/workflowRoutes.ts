@@ -1,5 +1,5 @@
 export const NEW_PROJECT_ID = 'new'
-export type WorkflowRouteStep = 1 | 2 | 3
+export type WorkflowRouteStep = 1 | 2 | 3 | 4
 
 export function newProjectStepPath(): string {
   return `/projects/${NEW_PROJECT_ID}/step/1`

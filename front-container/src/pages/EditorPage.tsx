@@ -11,7 +11,7 @@ import { PanelHeading } from '../components/PanelHeading'
 import { ProjectHome } from '../components/ProjectHome'
 import { ResultsPanel } from '../components/ResultsPanel'
 import { Scene } from '../components/Scene3D/Scene'
-import { PalletizationScene } from '../components/Scene3D/PalletizationScene'
+import { PalletExplorerScene } from '../components/Scene3D/PalletExplorerScene'
 import { PaletteForm } from '../components/Sidebar/PaletteForm'
 import {
   WorkflowSteps,
@@ -45,6 +45,7 @@ const STEP_KEYS: Record<
   1: { title: 'editor.step1Title', description: 'editor.step1Description' },
   2: { title: 'editor.step2Title', description: 'editor.step2Description' },
   3: { title: 'editor.step3Title', description: 'editor.step3Description' },
+  4: { title: 'editor.step4Title', description: 'editor.step4Description' },
 }
 
 export function EditorPage() {
@@ -164,10 +165,10 @@ export function EditorPage() {
     window.scrollTo({ top: 0, behavior })
   }, [currentStep])
 
-  // L'étape 3 n'a de sens qu'avec un plan calculé.
+  // Les étapes 3 et 4 n'ont de sens qu'avec un plan calculé.
   useEffect(() => {
     if (
-      currentStep !== 3 ||
+      (currentStep !== 3 && currentStep !== 4) ||
       routeError ||
       !routeProjectId ||
       routeProjectId === NEW_PROJECT_ID ||
@@ -194,6 +195,22 @@ export function EditorPage() {
       ) ?? optimization.result.containers[0] ?? null
     )
   }, [optimization.result, inspectedPosition])
+
+  /*
+   * Le total de palettes de l'étape 3 porte sur toute l'expédition, pas sur
+   * le seul conteneur inspecté : chaque palette montée garde la trace de son
+   * conteneur d'origine, pour s'orienter en la parcourant.
+   */
+  const allPallets = useMemo(() => {
+    if (!optimization.result) return []
+    return optimization.result.containers.flatMap((load) =>
+      load.pallets.map((pallet) => ({
+        pallet,
+        containerPosition: load.position,
+        containerName: load.name,
+      })),
+    )
+  }, [optimization.result])
 
   const saveProject = useCallback(
     async (
@@ -447,7 +464,7 @@ export function EditorPage() {
   }
 
   const handleStepChange = async (step: WorkflowStepNumber) => {
-    if (step === 3 && !optimization.result) return
+    if ((step === 3 || step === 4) && !optimization.result) return
     if (step === currentStep) return
 
     let projectId =
@@ -540,7 +557,9 @@ export function EditorPage() {
             ? t('editor.railIntro1')
             : currentStep === 2
               ? t('editor.railIntro2')
-              : t('editor.railIntro3')}
+              : currentStep === 3
+                ? t('editor.railIntro3')
+                : t('editor.railIntro4')}
         </p>
 
         {currentStep === 1 ? (
@@ -599,7 +618,7 @@ export function EditorPage() {
                 {t('common.rename')}
               </Button>
             ) : null}
-            {currentStep === 3 && optimization.result && editor.projectId ? (
+            {currentStep === 4 && optimization.result && editor.projectId ? (
               <Button
                 variant="ghost"
                 icon="file-download-outline"
@@ -684,6 +703,7 @@ export function EditorPage() {
           hasContainers={hasContainers}
           packageCount={packageCount}
           containerCount={editor.containers.length}
+          palletCount={allPallets.length}
           hasResult={Boolean(optimization.result)}
           onStepChange={(step) => void handleStepChange(step)}
         />
@@ -764,8 +784,41 @@ export function EditorPage() {
           </section>
         ) : null}
 
-        {/* Étape 3 — le plan, conteneur par conteneur. */}
+        {/* Étape 3 — chaque palette montée, parcourue une à une. */}
         {currentStep === 3 && optimization.result ? (
+          <section
+            className="pallet-explorer-panel"
+            aria-labelledby="palletization-title"
+          >
+            <PanelHeading
+              icon="layers-outline"
+              eyebrow={t('palletization.eyebrow')}
+              title={t('palletization.title')}
+              titleId="palletization-title"
+              meta={t('palletization.meta', { count: allPallets.length })}
+            />
+            <div
+              className={
+                optimization.isOptimizing
+                  ? 'palletization-viewport is-busy'
+                  : 'palletization-viewport'
+              }
+            >
+              {optimization.isOptimizing ? (
+                <p className="muted" role="status">
+                  {t('palletization.updating')}
+                </p>
+              ) : allPallets.length > 0 ? (
+                <PalletExplorerScene pallets={allPallets} />
+              ) : (
+                <p className="muted">{t('palletization.empty')}</p>
+              )}
+            </div>
+          </section>
+        ) : null}
+
+        {/* Étape 4 — le plan, conteneur par conteneur. */}
+        {currentStep === 4 && optimization.result ? (
           <section className="final-placement" aria-labelledby="scene-title">
             <LoadingPlan
               result={optimization.result}
@@ -841,26 +894,6 @@ export function EditorPage() {
               </div>
             </section>
 
-            {inspectedLoad && inspectedLoad.pallets.length > 0 ? (
-              <section
-                className="palletization-panel"
-                aria-labelledby="palletization-title"
-              >
-                <PanelHeading
-                  icon="layers-outline"
-                  eyebrow={t('palletization.eyebrow')}
-                  title={t('palletization.title')}
-                  titleId="palletization-title"
-                  meta={t('palletization.meta', {
-                    count: inspectedLoad.pallets.length,
-                  })}
-                />
-                <div className="palletization-viewport">
-                  <PalletizationScene pallets={inspectedLoad.pallets} />
-                </div>
-              </section>
-            ) : null}
-
             <ResultsPanel
               result={optimization.result}
               load={inspectedLoad}
@@ -917,6 +950,15 @@ export function EditorPage() {
             </Button>
           ) : null}
           {currentStep === 3 ? (
+            <Button
+              variant="primary"
+              iconAfter="arrow-right-outline"
+              onClick={() => void handleStepChange(4)}
+            >
+              {t('editor.nextSeeFinalPlan')}
+            </Button>
+          ) : null}
+          {currentStep === 4 ? (
             <Button
               variant="secondary"
               icon="check-outline"

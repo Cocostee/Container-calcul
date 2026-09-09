@@ -7,7 +7,7 @@ import { useTheme } from '@mui/material/styles'
 import { useTranslation } from '../i18n'
 import { Icon } from './ui/Icon'
 
-export type WorkflowStepNumber = 1 | 2 | 3
+export type WorkflowStepNumber = 1 | 2 | 3 | 4
 
 interface WorkflowStepsProps {
   currentStep: WorkflowStepNumber
@@ -15,6 +15,8 @@ interface WorkflowStepsProps {
   hasContainers: boolean
   packageCount: number
   containerCount: number
+  /** Total des palettes montées, toutes expéditions confondues — n'existe qu'après le calcul. */
+  palletCount: number
   hasResult: boolean
   onStepChange: (step: WorkflowStepNumber) => void
 }
@@ -51,7 +53,7 @@ function StepMarker({ index, complete, current }: StepMarkerProps) {
 }
 
 /**
- * Fil du chargement : trois jalons reliés par une ligne qui se remplit.
+ * Fil du chargement : quatre jalons reliés par une ligne qui se remplit.
  *
  * L'orientation suit la largeur disponible — horizontale sur grand écran,
  * verticale dès que les libellés ne tiennent plus côte à côte. C'est le
@@ -64,6 +66,7 @@ export function WorkflowSteps({
   hasContainers,
   packageCount,
   containerCount,
+  palletCount,
   hasResult,
   onStepChange,
 }: WorkflowStepsProps) {
@@ -93,8 +96,16 @@ export function WorkflowSteps({
       id: 3,
       title: t('steps.step3Title'),
       detail: hasResult
-        ? t('steps.step3DetailPlan', { count: containerCount })
+        ? t('steps.step3DetailPallets', { count: palletCount })
         : t('steps.step3Detail'),
+      complete: hasResult,
+    },
+    {
+      id: 4,
+      title: t('steps.step4Title'),
+      detail: hasResult
+        ? t('steps.step4DetailPlan', { count: containerCount })
+        : t('steps.step4Detail'),
       complete: hasResult,
     },
   ]
@@ -113,7 +124,7 @@ export function WorkflowSteps({
             <Step key={step.id} completed={step.complete}>
               <StepButton
                 onClick={() => onStepChange(step.id)}
-                disabled={step.id === 3 && !hasResult}
+                disabled={(step.id === 3 || step.id === 4) && !hasResult}
                 aria-current={isCurrent ? 'step' : undefined}
                 icon={
                   <StepMarker

@@ -12,10 +12,10 @@ import { ImportPlanPage } from '../pages/ImportPlanPage'
 import { PrintPlanPage } from '../pages/PrintPlanPage'
 import { NEW_PROJECT_ID, newProjectStepPath, projectStepPath } from './workflowRoutes'
 
-const VALID_STEPS = new Set(['1', '2', '3'])
+const VALID_STEPS = new Set(['1', '2', '3', '4'])
 
 /**
- * Filtre des routes du parcours en trois étapes.
+ * Filtre des routes du parcours en quatre étapes.
  *
  * Il tient les URL invalides hors de l'éditeur et empêche un projet brouillon de
  * opening a later step before it has been persisted.
