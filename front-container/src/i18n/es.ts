@@ -34,7 +34,7 @@ export const es: Messages = {
 },
 
   home: {
-    eyebrow: 'Logística',
+    eyebrow: 'Duhamel Logistiques',
     title: 'Planes de carga',
     intro:
       'Cree un proyecto o retome un cálculo existente para organizar los bultos, los palés y el contenedor.',

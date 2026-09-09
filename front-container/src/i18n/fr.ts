@@ -39,7 +39,7 @@ export const fr = {
 },
 
   home: {
-    eyebrow: 'Logistique',
+    eyebrow: 'Duhamel Logistiques',
     title: 'Plans de chargement',
     intro:
       'Créez un projet ou reprenez un calcul existant pour organiser les colis, les palettes et le conteneur.',

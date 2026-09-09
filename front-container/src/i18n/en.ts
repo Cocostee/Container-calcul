@@ -34,7 +34,7 @@ export const en: Messages = {
 },
 
   home: {
-    eyebrow: 'Logistics',
+    eyebrow: 'Duhamel Logistiques',
     title: 'Loading plans',
     intro:
       'Create a project or pick up an existing calculation to organise packages, pallets and the container.',

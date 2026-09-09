@@ -34,7 +34,7 @@ export const de: Messages = {
 },
 
   home: {
-    eyebrow: 'Logistik',
+    eyebrow: 'Duhamel Logistiques',
     title: 'Beladepläne',
     intro:
       'Legen Sie ein Projekt an oder öffnen Sie eine bestehende Berechnung, um Packstücke, Paletten und Container zu ordnen.',
