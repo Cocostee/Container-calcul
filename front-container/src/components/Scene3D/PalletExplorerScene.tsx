@@ -78,60 +78,95 @@ function ranksOf(values: number[]): number[] {
 }
 
 /**
- * L'écart réellement appliqué entre deux rangées voisines. L'écart demandé
- * est un maximum : sur un axe très découpé — 28 couches de 2 cm, par exemple
- * — l'appliquer tel quel ferait une tour illisible, donc on le réduit pour
- * que l'ensemble ne dépasse jamais le double de sa taille réelle.
+ * Le pas d'écartement en hauteur. L'écart demandé est un maximum : sur un
+ * empilage très découpé — 28 couches de 2 cm, par exemple — l'appliquer tel
+ * quel ferait une tour illisible, donc on le réduit pour que la charge ne
+ * dépasse pas le double de sa hauteur. Rien ne déborde pour autant : elle
+ * monte au-dessus du plateau, elle n'en sort pas.
  */
-function spacingBetweenRanks(
-  size: number,
+function stepAbovePallet(
+  loadHeight: number,
   rankCount: number,
   gapCm: number,
 ): number {
   if (rankCount < 2) return 0
-  return Math.min(gapCm, size / (rankCount - 1))
+  return Math.min(gapCm, loadHeight / (rankCount - 1))
+}
+
+/**
+ * Le pas d'écartement au sol, borné par la place restée libre sur le
+ * plateau : la rangée de rang `n` s'écarte de `n` pas, donc aucune ne doit
+ * dépasser son bord. Le plateau garde ainsi sa taille réelle — l'agrandir
+ * pour absorber l'écart reviendrait à rapetisser les colis dessus.
+ */
+function stepOnPallet(
+  packages: PackagePlacement[],
+  ranks: number[],
+  start: (item: PackagePlacement) => number,
+  size: (item: PackagePlacement) => number,
+  palletSize: number,
+  gapCm: number,
+): number {
+  let step = gapCm
+  for (const item of packages) {
+    const rank = ranks.indexOf(Math.round(start(item)))
+    if (rank < 1) continue
+    const room = palletSize - (start(item) + size(item))
+    step = Math.min(step, room / rank)
+  }
+  return Math.max(0, step)
 }
 
 interface ExplodedLayout {
   /** Le décalage de chaque colis, en centimètres, axes x / y / z des données. */
   offsets: Map<string, Vec3>
-  /** Les cotes de la palette une fois écartée, en centimètres. */
-  length: number
-  width: number
+  /** La hauteur d'ensemble une fois la charge écartée, en centimètres. */
   height: number
 }
 
 /**
- * Écarte les colis d'une palette sans toucher à leur taille : chaque rangée
- * s'éloigne de la précédente d'un même pas, dans les trois axes, et la
- * palette s'étend d'autant. Rien ne peut donc déborder du plateau, et le
- * réglage reste efficace même sur une palette pleine à ras bord — un simple
- * écartement vers l'extérieur, lui, n'aurait plus eu où pousser.
+ * Écarte les colis d'une palette sans jamais toucher à leur taille ni à
+ * celle du plateau : chaque rangée s'éloigne de la précédente d'un même pas.
+ * Au sol, ce pas s'arrête au bord du plateau — rien ne se retrouve dans le
+ * vide ; en hauteur, la charge s'ouvre librement, puisque monter ne fait
+ * sortir de rien.
  */
 function explodeLayout(
   pallet: GeneratedPallet,
   gapCm: number,
 ): ExplodedLayout {
   const packages = pallet.packages
-  const loadHeight = pallet.height - pallet.base_height
   const offsets = new Map<string, Vec3>()
 
   if (packages.length === 0 || gapCm === 0) {
-    return {
-      offsets,
-      length: pallet.length,
-      width: pallet.width,
-      height: pallet.height,
-    }
+    return { offsets, height: pallet.height }
   }
 
   const xRanks = ranksOf(packages.map((item) => item.x))
   const yRanks = ranksOf(packages.map((item) => item.y))
   const zRanks = ranksOf(packages.map((item) => item.z))
 
-  const stepX = spacingBetweenRanks(pallet.length, xRanks.length, gapCm)
-  const stepY = spacingBetweenRanks(pallet.width, yRanks.length, gapCm)
-  const stepZ = spacingBetweenRanks(loadHeight, zRanks.length, gapCm)
+  const stepX = stepOnPallet(
+    packages,
+    xRanks,
+    (item) => item.x,
+    (item) => item.length,
+    pallet.length,
+    gapCm,
+  )
+  const stepY = stepOnPallet(
+    packages,
+    yRanks,
+    (item) => item.y,
+    (item) => item.width,
+    pallet.width,
+    gapCm,
+  )
+  const stepZ = stepAbovePallet(
+    pallet.height - pallet.base_height,
+    zRanks.length,
+    gapCm,
+  )
 
   for (const item of packages) {
     offsets.set(item.package_id, [
@@ -143,8 +178,6 @@ function explodeLayout(
 
   return {
     offsets,
-    length: pallet.length + (xRanks.length - 1) * stepX,
-    width: pallet.width + (yRanks.length - 1) * stepY,
     height: pallet.height + (zRanks.length - 1) * stepZ,
   }
 }
@@ -192,7 +225,7 @@ export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
     () =>
       current
         ? explodeLayout(current.pallet, gapCm)
-        : { offsets: new Map<string, Vec3>(), length: 0, width: 0, height: 0 },
+        : { offsets: new Map<string, Vec3>(), height: 0 },
     [current, gapCm],
   )
 
@@ -218,8 +251,8 @@ export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
       return { distance: 4, target: [0, 0.5, 0] as Vec3 }
     }
     const maxDim = Math.max(
-      exploded.length * SCALE,
-      exploded.width * SCALE,
+      current.pallet.length * SCALE,
+      current.pallet.width * SCALE,
       exploded.height * SCALE,
       1,
     )
@@ -366,9 +399,9 @@ export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
           <PaletteMesh
             position={[0, (exploded.height * SCALE) / 2, 0]}
             size={[
-              exploded.length * SCALE,
+              pallet.length * SCALE,
               exploded.height * SCALE,
-              exploded.width * SCALE,
+              pallet.width * SCALE,
             ]}
             baseHeight={pallet.base_height * SCALE}
             color={colorByPaletteType(pallet.id)}
@@ -395,7 +428,7 @@ export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
               <PackageMesh
                 key={packagePlacement.package_id}
                 position={[
-                  -(exploded.length * SCALE) / 2 +
+                  -(pallet.length * SCALE) / 2 +
                     (packagePlacement.x +
                       packagePlacement.length / 2 +
                       offset[0]) *
@@ -405,7 +438,7 @@ export function PalletExplorerScene({ pallets }: PalletExplorerSceneProps) {
                       packagePlacement.height / 2 +
                       offset[2]) *
                       SCALE,
-                  -(exploded.width * SCALE) / 2 +
+                  -(pallet.width * SCALE) / 2 +
                     (packagePlacement.y +
                       packagePlacement.width / 2 +
                       offset[1]) *
